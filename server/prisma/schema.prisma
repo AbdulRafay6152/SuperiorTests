@@ -1,0 +1,164 @@
+// ============================================================
+// SuperiorTests — Prisma Schema (PostgreSQL)
+// ============================================================
+// Run: npx prisma migrate dev --name init
+// Run: npx prisma generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users (test owners / instructors) ──────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tests        Test[]
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
+
+  @@map("users")
+}
+
+// ── Sessions ───────────────────────────────────────────────
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("sessions")
+}
+
+// ── Password Reset Tokens ──────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// ── Tests ──────────────────────────────────────────────────
+
+model Test {
+  id        String   @id @default(cuid())
+  slug      String   @unique @default(cuid())
+  ownerId   String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Settings stored as JSON for flexibility
+  settingsJson String @default("{}") @map("settings")
+
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  Attempt[]
+
+  @@index([slug])
+  @@index([ownerId])
+  @@map("tests")
+}
+
+// ── Questions ──────────────────────────────────────────────
+
+model Question {
+  id     String @id @default(cuid())
+  testId String
+  order  Int    @default(0)
+  type   String // multiple-choice-single | multiple-choice-multi | true-false | fill-blank | short-answer | essay | numeric | matching
+
+  // Content stored as JSON for flexibility across question types
+  contentJson String @default("{}") @map("content")
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  answers Answer[]
+
+  @@index([testId, order])
+  @@map("questions")
+}
+
+// ── Attempts ───────────────────────────────────────────────
+
+model Attempt {
+  id             String   @id @default(cuid())
+  testId         String
+  takerName      String
+  takerEmail     String   @default("")
+  takerStudentId String   @default("")
+  attemptNumber  Int      @default(1)
+  status         String   @default("in-progress") // in-progress | submitted | paused | expired
+  score          Float?
+  maxScore       Float    @default(0)
+  percentage     Float?
+  startedAt      DateTime @default(now())
+  submittedAt    DateTime?
+  timeTakenSec   Int?     @map("time_taken_seconds")
+
+  // Answers stored as JSON array
+  answersJson String @default("[]") @map("answers")
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  antiCheatEvents AntiCheatEvent[]
+
+  @@index([testId])
+  @@index([testId, status])
+  @@map("attempts")
+}
+
+// ── Answers (individual question responses) ────────────────
+
+model Answer {
+  id         String @id @default(cuid())
+  attemptId  String
+  questionId String
+  answerJson String @default("null") @map("answer")
+  flagged    Boolean @default(false)
+  timeSpent  Int     @default(0) @map("time_spent_seconds")
+
+  attempt  Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("answers")
+}
+
+// ── Anti-Cheat Events ──────────────────────────────────────
+
+model AntiCheatEvent {
+  id        String   @id @default(cuid())
+  attemptId String
+  type      String   // tab-switch | fullscreen-exit | copy-attempt | right-click | refresh-attempt | paste-attempt | selection-attempt
+  details   String?
+  timestamp DateTime @default(now())
+
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("anti_cheat_events")
+}

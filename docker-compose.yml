@@ -1,56 +1,71 @@
+# ============================================================
+# SuperiorTests — Docker Compose
+# ============================================================
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose up postgres    # Start only the database
+#   docker-compose logs -f api    # Follow API logs
+#   docker-compose down -v        # Stop and remove volumes
+
 version: '3.8'
 
 services:
-  # ── PostgreSQL Database ──────────────────────────────────
-  db:
+  # ── PostgreSQL Database ───────────────────────────────────
+  postgres:
     image: postgres:16-alpine
     container_name: superiortests-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: superiortests
+      POSTGRES_PASSWORD: superiortests_dev
       POSTGRES_DB: superiortests
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U superiortests"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # ── Backend API ──────────────────────────────────────────
+  # ── API Server ────────────────────────────────────────────
   api:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      context: ./server
+      dockerfile: Dockerfile
     container_name: superiortests-api
     restart: unless-stopped
-    ports:
-      - "3001:3001"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/superiortests
-      JWT_SECRET: change-this-in-production
-      JWT_REFRESH_SECRET: change-this-refresh-secret
-      NODE_ENV: production
-      PORT: 3001
-      APP_URL: http://localhost:5173
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://superiortests:superiortests_dev@postgres:5432/superiortests
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-SuperiorTests <noreply@superiortests.com>}
+    ports:
+      - "3000:3000"
 
-  # ── Frontend (Vite preview) ──────────────────────────────
-  web:
+  # ── Frontend (Vite preview) ───────────────────────────────
+  # For production, serve dist/ with nginx or a CDN.
+  # This is for local development convenience.
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.web
-    container_name: superiortests-web
+      dockerfile: Dockerfile.frontend
+    container_name: superiortests-frontend
     restart: unless-stopped
-    ports:
-      - "4173:4173"
     depends_on:
       - api
+    ports:
+      - "4173:4173"
 
 volumes:
-  pgdata:
+  postgres_data:

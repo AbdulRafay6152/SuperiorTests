@@ -111,7 +111,13 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-3 text-sm text-center">
+          <Link to="/reset-password" style={{ color: 'var(--accent)', fontWeight: 500 }} className="no-underline">
+            Forgot password?
+          </Link>
+        </p>
+
+        <p className="mt-2 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
           Don't have an account?{' '}
           <Link to="/signup" style={{ color: 'var(--accent)', fontWeight: 500 }}>
             Create one

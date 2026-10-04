@@ -12,6 +12,7 @@ import TestTake from './pages/TestTake';
 import Results from './pages/Results';
 import ResultDetail from './pages/ResultDetail';
 import Profile from './pages/Profile';
+import ResetPassword from './pages/ResetPassword';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const user = getCurrentUser();
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/take/:slug" element={<TestTake />} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="dashboard" element={<Dashboard />} />
