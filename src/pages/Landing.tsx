@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getCurrentUser, getTheme, toggleTheme } from '../store';
-import { Sun, Moon, ClipboardList, Shield, BarChart3, Clock, FileText, Lock } from 'lucide-react';
+import { Sun, Moon, ClipboardList } from 'lucide-react';
 
 export default function Landing() {
   const user = getCurrentUser();
@@ -12,49 +12,50 @@ export default function Landing() {
   }, [theme]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
-      {/* Header */}
-      <header className="border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}>
+      {/* Header - minimal and professional */}
+      <header className="border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
+        <div className="max-w-6xl mx-auto px-6 h-12 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
-              <ClipboardList size={16} color="#fff" strokeWidth={2} />
+            <div className="w-6 h-6 flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
+              <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
             </div>
-            <span className="font-semibold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+            <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
               SuperiorTests
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded border-none cursor-pointer"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+              className="p-1.5 rounded border-none cursor-pointer"
+              style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
             </button>
             {user ? (
               <Link
                 to="/dashboard"
-                className="px-4 py-2 rounded text-sm font-medium no-underline"
+                className="px-3 py-1.5 text-xs font-medium no-underline rounded"
                 style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
               >
-                Go to Dashboard
+                Dashboard
               </Link>
             ) : (
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded text-sm font-medium no-underline"
+                  className="px-3 py-1.5 text-xs font-medium no-underline"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Log in
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 rounded text-sm font-medium no-underline"
+                  className="px-3 py-1.5 text-xs font-medium no-underline rounded"
                   style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
                 >
-                  Create Account
+                  Sign up
                 </Link>
               </>
             )}
@@ -62,84 +63,78 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="max-w-2xl">
-          <h1 
-            className="text-3xl sm:text-4xl font-bold mb-4"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', lineHeight: 1.2 }}
-          >
-            Online testing built for academic rigor.
-          </h1>
-          <p className="text-lg mb-8" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Create secure assessments, enforce academic integrity, and generate detailed reports. 
-            Designed for colleges that need reliability, not gimmicks.
-          </p>
-          {!user && (
-            <div className="flex gap-3">
-              <Link
-                to="/signup"
-                className="px-6 py-3 rounded text-sm font-semibold no-underline"
-                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-              >
-                Get Started
-              </Link>
-              <Link
-                to="/login"
-                className="px-6 py-3 rounded text-sm font-semibold no-underline border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-              >
-                Log In
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
+      {/* Hero - clean and direct */}
+      <div className="flex-1 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 py-16 w-full">
+          <div className="max-w-xl">
+            <h1 
+              className="text-2xl font-bold mb-3 tracking-tight"
+              style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', lineHeight: 1.3 }}
+            >
+              Online testing for higher education.
+            </h1>
+            <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              Create assessments, enforce academic integrity, and generate detailed reports. 
+              Built for colleges that need a reliable, no-frills testing platform.
+            </p>
+            {!user && (
+              <div className="flex gap-2">
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 text-xs font-semibold no-underline rounded"
+                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                >
+                  Create free account
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-xs font-medium no-underline rounded border"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Log in
+                </Link>
+              </div>
+            )}
+          </div>
 
-      {/* Features */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={<FileText size={20} />}
-            title="8 Question Types"
-            description="Multiple choice, true/false, fill-in-blank, short answer, essay, numeric with tolerance, matching pairs, and multi-select."
-          />
-          <FeatureCard
-            icon={<Shield size={20} />}
-            title="Anti-Cheat Controls"
-            description="Tab-switch detection, fullscreen enforcement, copy/paste blocking, watermarking, and full audit trails."
-          />
-          <FeatureCard
-            icon={<Clock size={20} />}
-            title="Timed Assessments"
-            description="Set time limits, attempt restrictions, availability windows, and auto-submit on expiry."
-          />
-          <FeatureCard
-            icon={<Lock size={20} />}
-            title="Access Control"
-            description="Passcode protection, email whitelisting, student ID verification, or open access — your choice."
-          />
-          <FeatureCard
-            icon={<BarChart3 size={20} />}
-            title="Detailed Reports"
-            description="Per-student breakdowns, question-level analytics, pass rates, and PDF/CSV export."
-          />
-          <FeatureCard
-            icon={<ClipboardList size={20} />}
-            title="Bulk Import"
-            description="Paste plain text to auto-parse questions. Preview before importing. Supports standard formats."
-          />
+          {/* Feature list - dense and utilitarian */}
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+            <FeatureItem
+              title="8 question types"
+              description="Multiple choice, true/false, fill-blank, short answer, essay, numeric, matching, multi-select."
+            />
+            <FeatureItem
+              title="Anti-cheat controls"
+              description="Tab detection, fullscreen enforcement, copy blocking, watermarking, audit trails."
+            />
+            <FeatureItem
+              title="Flexible access"
+              description="Open links, passcodes, email whitelists, or student ID verification."
+            />
+            <FeatureItem
+              title="Time limits & attempts"
+              description="Set availability windows, time limits, attempt restrictions, and auto-submit."
+            />
+            <FeatureItem
+              title="Detailed reports"
+              description="Per-student breakdowns, question analytics, pass rates, PDF and CSV export."
+            />
+            <FeatureItem
+              title="Bulk import"
+              description="Paste formatted text to auto-parse questions. Preview before importing."
+            />
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* Footer */}
-      <footer className="border-t py-8" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            SuperiorTests — Online Testing Platform
+      {/* Footer - minimal */}
+      <footer className="border-t py-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            SuperiorTests
           </span>
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Built for colleges
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            For colleges and universities
           </span>
         </div>
       </footer>
@@ -147,14 +142,13 @@ export default function Landing() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function FeatureItem({ title, description }: { title: string; description: string }) {
   return (
-    <div className="p-5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="mb-3" style={{ color: 'var(--accent)' }}>{icon}</div>
-      <h3 className="font-semibold text-base mb-1.5" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+    <div>
+      <h3 className="text-xs font-semibold mb-1 tracking-tight" style={{ color: 'var(--text)' }}>
         {title}
       </h3>
-      <p className="text-sm" style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {description}
       </p>
     </div>

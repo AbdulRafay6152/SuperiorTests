@@ -32,49 +32,46 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg)' }}>
-      <div className="w-full max-w-sm">
-        <div className="flex items-center justify-between mb-8">
+      <div className="w-full max-w-xs">
+        <div className="flex items-center justify-between mb-6">
           <Link to="/" className="flex items-center gap-2 no-underline">
-            <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
-              <ClipboardList size={16} color="#fff" strokeWidth={2} />
+            <div className="w-6 h-6 flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
+              <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
             </div>
-            <span className="font-semibold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+            <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
               SuperiorTests
             </span>
           </Link>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded border-none cursor-pointer"
-            style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+            className="p-1.5 rounded border-none cursor-pointer"
+            style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
           >
-            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
           </button>
         </div>
 
-        <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+        <h1 className="text-base font-semibold mb-1 tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
           Log in
         </h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-          Enter your credentials to access your account.
-        </p>
 
         {error && (
-          <div className="mb-4 p-3 rounded text-sm border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+          <div className="my-3 px-3 py-2 text-xs rounded border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>
-              Email address
+          <div className="mb-3">
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
+              Email
             </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 rounded border text-sm outline-none"
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
               style={{ 
                 backgroundColor: 'var(--surface)', 
                 borderColor: 'var(--border)', 
@@ -83,8 +80,8 @@ export default function Login() {
               placeholder="you@university.edu"
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>
+          <div className="mb-4">
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>
               Password
             </label>
             <input
@@ -92,7 +89,7 @@ export default function Login() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 rounded border text-sm outline-none"
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
               style={{ 
                 backgroundColor: 'var(--surface)', 
                 borderColor: 'var(--border)', 
@@ -104,23 +101,23 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded text-sm font-semibold border-none cursor-pointer disabled:opacity-50"
+            className="w-full py-1.5 rounded text-xs font-semibold border-none cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
           >
             {loading ? 'Logging in…' : 'Log in'}
           </button>
         </form>
 
-        <p className="mt-3 text-sm text-center">
-          <Link to="/reset-password" style={{ color: 'var(--accent)', fontWeight: 500 }} className="no-underline">
+        <p className="mt-3 text-xs text-center">
+          <Link to="/reset-password" style={{ color: 'var(--accent)' }} className="no-underline">
             Forgot password?
           </Link>
         </p>
 
-        <p className="mt-2 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
-          Don't have an account?{' '}
-          <Link to="/signup" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-            Create one
+        <p className="mt-2 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+          No account?{' '}
+          <Link to="/signup" style={{ color: 'var(--accent)' }}>
+            Sign up
           </Link>
         </p>
       </div>

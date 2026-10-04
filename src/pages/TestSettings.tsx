@@ -58,34 +58,34 @@ export default function TestSettingsPage() {
   const parseList = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean);
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to={`/test/${test.id}/edit`} className="no-underline" style={{ color: 'var(--accent)' }}>
-          <ArrowLeft size={16} className="inline" /> Back to Editor
+    <div className="max-w-2xl">
+      <div className="mb-3 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
+        <Link to={`/test/${test.id}/edit`} className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>
+          ← Back to editor
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-6" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+      <h1 className="text-base font-semibold mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
         Test Settings
       </h1>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* General */}
         <Section title="General">
-          <Field label="Test Name">
+          <Field label="Test name">
             <input type="text" value={settings.name} onChange={e => update({ name: e.target.value })}
-              className="w-full px-3 py-2 rounded border text-sm outline-none"
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
           </Field>
           <Field label="Description / Instructions">
             <textarea value={settings.description} onChange={e => update({ description: e.target.value })}
-              className="w-full px-3 py-2 rounded border text-sm outline-none resize-y"
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y"
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
               rows={3} placeholder="Instructions shown to students before they begin..." />
           </Field>
-          <Field label="Completion Message">
+          <Field label="Completion message">
             <textarea value={settings.completionMessage} onChange={e => update({ completionMessage: e.target.value })}
-              className="w-full px-3 py-2 rounded border text-sm outline-none resize-y"
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y"
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
               rows={2} />
           </Field>
@@ -223,9 +223,11 @@ export default function TestSettingsPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="p-5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>{title}</h2>
-      <div className="space-y-4">{children}</div>
+    <div className="rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+        <h2 className="text-xs font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>{title}</h2>
+      </div>
+      <div className="p-3 space-y-3">{children}</div>
     </div>
   );
 }
@@ -233,7 +235,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>{label}</label>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
       {children}
     </div>
   );
@@ -241,13 +243,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-center gap-3 cursor-pointer">
+    <label className="flex items-center gap-2.5 cursor-pointer">
       <div className="relative">
         <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
-        <div className="w-9 h-5 rounded-full transition-colors" style={{ backgroundColor: checked ? 'var(--accent)' : 'var(--border)' }} />
-        <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }} />
+        <div className="w-7 h-4 rounded-full transition-colors" style={{ backgroundColor: checked ? 'var(--accent)' : 'var(--border)' }} />
+        <div className="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform" style={{ transform: checked ? 'translateX(12px)' : 'translateX(0)' }} />
       </div>
-      <span className="text-sm" style={{ color: 'var(--text)' }}>{label}</span>
+      <span className="text-xs" style={{ color: 'var(--text)' }}>{label}</span>
     </label>
   );
 }

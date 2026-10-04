@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentUser, logout, toggleTheme, getTheme } from '../store';
-import { Sun, Moon, LogOut, FileText, User, ClipboardList } from 'lucide-react';
+import { Sun, Moon, LogOut, ClipboardList } from 'lucide-react';
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -15,69 +15,77 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
-      {/* Header */}
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}>
+      {/* Header - Testmoz-style minimal */}
       <header 
         className="border-b sticky top-0 z-50"
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-12 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-              <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
-                <ClipboardList size={16} color="#fff" strokeWidth={2} />
+              <div className="w-6 h-6 flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
+                <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
               </div>
-              <span className="font-semibold text-lg" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+              <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
                 SuperiorTests
               </span>
             </Link>
-            <nav className="hidden sm:flex items-center gap-1">
+            <nav className="hidden sm:flex items-center gap-4">
               <Link
                 to="/dashboard"
-                className="px-3 py-1.5 rounded text-sm font-medium no-underline transition-colors"
+                className="text-xs font-medium no-underline pb-0.5"
                 style={{
-                  color: location.pathname === '/dashboard' ? 'var(--primary)' : 'var(--text-secondary)',
-                  backgroundColor: location.pathname === '/dashboard' ? 'var(--bg-secondary)' : 'transparent',
+                  color: location.pathname === '/dashboard' ? 'var(--text)' : 'var(--text-muted)',
+                  borderBottom: location.pathname === '/dashboard' ? '1.5px solid var(--primary)' : '1.5px solid transparent',
                 }}
               >
                 My Tests
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded border-none cursor-pointer"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+              className="p-1.5 rounded border-none cursor-pointer"
+              style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
             </button>
             <Link
               to="/profile"
-              className="p-2 rounded no-underline flex items-center gap-1.5"
+              className="px-2 py-1.5 text-xs no-underline"
               style={{ color: 'var(--text-secondary)' }}
               title="Profile"
             >
-              <User size={16} />
-              <span className="hidden sm:inline text-sm">{user?.name?.split(' ')[0]}</span>
+              {user?.name?.split(' ')[0]}
             </Link>
             <button
               onClick={handleLogout}
-              className="p-2 rounded border-none cursor-pointer"
+              className="p-1.5 rounded border-none cursor-pointer"
               style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
               title="Log out"
             >
-              <LogOut size={16} />
+              <LogOut size={14} />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-5">
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <footer className="border-t py-3 mt-auto" style={{ borderColor: 'var(--border)' }}>
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            SuperiorTests
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -185,45 +185,44 @@ export default function TestEditor() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="text-sm no-underline" style={{ color: 'var(--accent)' }}>
-            ← Back
+      {/* Header - Testmoz-style compact */}
+      <div className="flex items-center justify-between mb-4 pb-3 border-b flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-2">
+          <Link to="/dashboard" className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>
+            ← Tests
           </Link>
+          <span className="text-xs" style={{ color: 'var(--border-strong)' }}>/</span>
           <input
             type="text"
             value={test.settings.name}
             onChange={e => setTest({ ...test, settings: { ...test.settings, name: e.target.value } })}
-            className="text-xl font-bold border-none bg-transparent outline-none"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', maxWidth: '400px' }}
+            className="text-sm font-semibold border-none bg-transparent outline-none"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', maxWidth: '300px' }}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {test.questions.length} questions · {totalPoints} pts
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {test.questions.length} q · {totalPoints} pts
           </span>
           <button
             onClick={save}
-            className="px-3 py-1.5 rounded text-sm font-medium border cursor-pointer"
+            className="px-2.5 py-1 rounded text-xs font-medium border cursor-pointer"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}
           >
-            {saving ? 'Saved ✓' : 'Save'}
+            {saving ? 'Saved' : 'Save'}
           </button>
           <Link
             to={`/test/${test.id}/settings`}
-            className="px-3 py-1.5 rounded text-sm font-medium no-underline border"
+            className="px-2.5 py-1 rounded text-xs font-medium no-underline border"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
-            <Settings size={14} className="inline mr-1" />
             Settings
           </Link>
           <button
             onClick={handlePublish}
-            className="px-4 py-1.5 rounded text-sm font-semibold border-none cursor-pointer"
+            className="px-2.5 py-1 rounded text-xs font-semibold border-none cursor-pointer"
             style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
           >
-            <Eye size={14} className="inline mr-1" />
             Publish
           </button>
         </div>
@@ -303,21 +302,21 @@ export default function TestEditor() {
       </div>
 
       {/* Add Question */}
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         <button
           onClick={() => addQuestion('multiple-choice-single')}
-          className="px-3 py-2 rounded text-sm font-medium border cursor-pointer flex items-center gap-1.5"
+          className="px-2.5 py-1.5 rounded text-xs font-medium border cursor-pointer flex items-center gap-1"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}
         >
-          <Plus size={14} /> Add Question
+          <Plus size={12} strokeWidth={2.5} /> Add question
         </button>
         {!showBulkImport && (
           <button
             onClick={() => setShowBulkImport(true)}
-            className="px-3 py-2 rounded text-sm font-medium border cursor-pointer flex items-center gap-1.5"
+            className="px-2.5 py-1.5 rounded text-xs font-medium border cursor-pointer flex items-center gap-1"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }}
           >
-            <Import size={14} /> Bulk Import
+            <Import size={12} /> Bulk import
           </button>
         )}
       </div>
@@ -333,17 +332,15 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
 }) {
-  const typeLabel = QUESTION_TYPES.find(t => t.value === question.type)?.label || question.type;
-
   return (
-    <div className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="flex items-start justify-between mb-3">
+    <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Q{index + 1}</span>
+          <span className="text-xs font-semibold text-mono" style={{ color: 'var(--text-muted)' }}>Q{index + 1}</span>
           <select
             value={question.type}
             onChange={e => onUpdate({ type: e.target.value as QuestionType })}
-            className="text-sm border rounded px-2 py-1 outline-none cursor-pointer"
+            className="text-xs border rounded px-1.5 py-0.5 outline-none cursor-pointer"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
           >
             {QUESTION_TYPES.map(t => (
@@ -351,10 +348,10 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => onMove(-1)} disabled={index === 0} className="p-1 border-none bg-transparent cursor-pointer disabled:opacity-30" style={{ color: 'var(--text-muted)' }}>↑</button>
-          <button onClick={() => onMove(1)} disabled={index === total - 1} className="p-1 border-none bg-transparent cursor-pointer disabled:opacity-30" style={{ color: 'var(--text-muted)' }}>↓</button>
-          <button onClick={onRemove} className="p-1 border-none bg-transparent cursor-pointer" style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
+        <div className="flex items-center gap-0.5">
+          <button onClick={() => onMove(-1)} disabled={index === 0} className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-30 text-xs" style={{ color: 'var(--text-muted)' }}>↑</button>
+          <button onClick={() => onMove(1)} disabled={index === total - 1} className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-30 text-xs" style={{ color: 'var(--text-muted)' }}>↓</button>
+          <button onClick={onRemove} className="p-0.5 border-none bg-transparent cursor-pointer" style={{ color: 'var(--text-muted)' }}><Trash2 size={11} /></button>
         </div>
       </div>
 
@@ -362,20 +359,20 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
       <textarea
         value={question.text}
         onChange={e => onUpdate({ text: e.target.value })}
-        className="w-full p-2 rounded border text-sm resize-y outline-none mb-3"
+        className="w-full p-2 rounded border text-xs resize-y outline-none mb-2"
         style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-        placeholder="Enter question text..."
+        placeholder="Question text..."
         rows={2}
       />
 
       {/* Points */}
-      <div className="flex items-center gap-3 mb-3">
-        <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>Points:</label>
+      <div className="flex items-center gap-2 mb-2">
+        <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Points:</label>
         <input
           type="number"
           value={question.points}
           onChange={e => onUpdate({ points: Math.max(0, parseInt(e.target.value) || 0) })}
-          className="w-16 px-2 py-1 rounded border text-sm outline-none"
+          className="w-14 px-1.5 py-0.5 rounded border text-xs outline-none"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
           min={0}
         />
@@ -388,38 +385,38 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
 
       {question.type === 'fill-blank' || question.type === 'short-answer' ? (
         <div>
-          <label className="text-sm font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Correct Answer:</label>
+          <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Correct answer</label>
           <input
             type="text"
             value={question.correctAnswer || ''}
             onChange={e => onUpdate({ correctAnswer: e.target.value })}
-            className="w-full px-2 py-1.5 rounded border text-sm outline-none"
+            className="w-full px-2 py-1 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            placeholder="Enter the correct answer..."
+            placeholder="Correct answer..."
           />
         </div>
       ) : null}
 
       {question.type === 'numeric' && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div>
-            <label className="text-sm font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Correct Value:</label>
+            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Correct value</label>
             <input
               type="number"
               value={question.correctAnswer || ''}
               onChange={e => onUpdate({ correctAnswer: e.target.value })}
-              className="w-full px-2 py-1.5 rounded border text-sm outline-none"
+              className="w-full px-2 py-1 rounded border text-xs outline-none"
               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
               placeholder="e.g., 42"
             />
           </div>
           <div>
-            <label className="text-sm font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Tolerance (±):</label>
+            <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Tolerance (±)</label>
             <input
               type="number"
               value={question.numericTolerance || 0}
               onChange={e => onUpdate({ numericTolerance: parseFloat(e.target.value) || 0 })}
-              className="w-24 px-2 py-1.5 rounded border text-sm outline-none"
+              className="w-20 px-1.5 py-0.5 rounded border text-xs outline-none"
               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
               min={0}
               step={0.01}
@@ -433,12 +430,12 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
       )}
 
       {/* Explanation */}
-      <div className="mt-3">
-        <label className="text-sm font-medium block mb-1" style={{ color: 'var(--text-secondary)' }}>Explanation (optional):</label>
+      <div className="mt-2">
+        <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Explanation (optional)</label>
         <textarea
           value={question.explanation || ''}
           onChange={e => onUpdate({ explanation: e.target.value })}
-          className="w-full p-2 rounded border text-sm resize-y outline-none"
+          className="w-full p-1.5 rounded border text-xs resize-y outline-none"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
           placeholder="Explain the correct answer..."
           rows={2}
@@ -471,35 +468,36 @@ function OptionsEditor({ question, onUpdate }: { question: Question; onUpdate: (
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {options.map((opt, idx) => (
-        <div key={opt.id} className="flex items-center gap-2">
+        <div key={opt.id} className="flex items-center gap-1.5">
           <input
             type={isMulti ? 'checkbox' : 'radio'}
             checked={opt.isCorrect}
             onChange={() => updateOption(idx, { isCorrect: !opt.isCorrect })}
             className="cursor-pointer"
+            style={{ width: '12px', height: '12px' }}
           />
-          <span className="text-sm font-medium w-5" style={{ color: 'var(--text-muted)' }}>
-            {String.fromCharCode(65 + idx)}.
+          <span className="text-xs font-medium w-4 text-mono" style={{ color: 'var(--text-muted)' }}>
+            {String.fromCharCode(65 + idx)}
           </span>
           <input
             type="text"
             value={opt.text}
             onChange={e => updateOption(idx, { text: e.target.value })}
-            className="flex-1 px-2 py-1 rounded border text-sm outline-none"
+            className="flex-1 px-1.5 py-0.5 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
             placeholder={`Option ${String.fromCharCode(65 + idx)}`}
           />
           {options.length > 2 && (
-            <button onClick={() => removeOption(idx)} className="p-1 border-none bg-transparent cursor-pointer" style={{ color: 'var(--error)' }}>
-              <Trash2 size={12} />
+            <button onClick={() => removeOption(idx)} className="p-0.5 border-none bg-transparent cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+              <Trash2 size={10} />
             </button>
           )}
         </div>
       ))}
-      <button onClick={addOption} className="text-sm border-none bg-transparent cursor-pointer flex items-center gap-1" style={{ color: 'var(--accent)' }}>
-        <Plus size={12} /> Add option
+      <button onClick={addOption} className="text-xs border-none bg-transparent cursor-pointer flex items-center gap-0.5" style={{ color: 'var(--accent)' }}>
+        <Plus size={10} strokeWidth={2.5} /> Add option
       </button>
     </div>
   );
@@ -524,36 +522,36 @@ function MatchingEditor({ question, onUpdate }: { question: Question; onUpdate: 
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Match left items to right items:</p>
+    <div className="space-y-1">
+      <p className="text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>Match items:</p>
       {pairs.map((pair, idx) => (
-        <div key={pair.id} className="flex items-center gap-2">
+        <div key={pair.id} className="flex items-center gap-1.5">
           <input
             type="text"
             value={pair.left}
             onChange={e => updatePair(idx, { left: e.target.value })}
-            className="flex-1 px-2 py-1 rounded border text-sm outline-none"
+            className="flex-1 px-1.5 py-0.5 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            placeholder="Left item"
+            placeholder="Item"
           />
-          <span style={{ color: 'var(--text-muted)' }}>→</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→</span>
           <input
             type="text"
             value={pair.right}
             onChange={e => updatePair(idx, { right: e.target.value })}
-            className="flex-1 px-2 py-1 rounded border text-sm outline-none"
+            className="flex-1 px-1.5 py-0.5 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            placeholder="Right match"
+            placeholder="Match"
           />
           {pairs.length > 2 && (
-            <button onClick={() => removePair(idx)} className="p-1 border-none bg-transparent cursor-pointer" style={{ color: 'var(--error)' }}>
-              <Trash2 size={12} />
+            <button onClick={() => removePair(idx)} className="p-0.5 border-none bg-transparent cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+              <Trash2 size={10} />
             </button>
           )}
         </div>
       ))}
-      <button onClick={addPair} className="text-sm border-none bg-transparent cursor-pointer flex items-center gap-1" style={{ color: 'var(--accent)' }}>
-        <Plus size={12} /> Add pair
+      <button onClick={addPair} className="text-xs border-none bg-transparent cursor-pointer flex items-center gap-0.5" style={{ color: 'var(--accent)' }}>
+        <Plus size={10} strokeWidth={2.5} /> Add pair
       </button>
     </div>
   );

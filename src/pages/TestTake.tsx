@@ -164,53 +164,55 @@ export default function TestTake() {
   if (phase === 'gate') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="w-full max-w-md">
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
-            {test.settings.name}
-          </h1>
+        <div className="w-full max-w-sm">
+          <div className="mb-4 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <h1 className="text-base font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+              {test.settings.name}
+            </h1>
+          </div>
           {test.settings.description && (
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.description}</p>
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{test.settings.description}</p>
           )}
-          <div className="text-sm mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <div>{test.questions.length} questions · {test.questions.reduce((s, q) => s + q.points, 0)} total points</div>
-            {test.settings.timeLimitMinutes && <div>Time limit: {test.settings.timeLimitMinutes} minutes</div>}
-            {test.settings.attemptLimit && <div>Attempt limit: {test.settings.attemptLimit}</div>}
+          <div className="text-xs mb-4 p-2.5 rounded border space-y-0.5" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+            <div>{test.questions.length} questions · {test.questions.reduce((s, q) => s + q.points, 0)} points</div>
+            {test.settings.timeLimitMinutes && <div>Time limit: {test.settings.timeLimitMinutes} min</div>}
+            {test.settings.attemptLimit && <div>Attempts: {test.settings.attemptLimit}</div>}
           </div>
 
           {gateError && (
-            <div className="mb-4 p-3 rounded text-sm border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+            <div className="mb-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
               {gateError}
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Full Name *</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name</label>
               <input type="text" value={takerName} onChange={e => setTakerName(e.target.value)}
-                className="w-full px-3 py-2 rounded border text-sm outline-none"
+                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
             </div>
             {test.settings.accessMode !== 'whitelist-id' && (
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Email *</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Email</label>
                 <input type="email" value={takerEmail} onChange={e => setTakerEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded border text-sm outline-none"
+                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
               </div>
             )}
             {test.settings.accessMode !== 'whitelist-email' && (
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Student ID *</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Student ID</label>
                 <input type="text" value={takerStudentId} onChange={e => setTakerStudentId(e.target.value)}
-                  className="w-full px-3 py-2 rounded border text-sm outline-none font-mono"
+                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
               </div>
             )}
             {test.settings.accessMode === 'passcode' && (
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Passcode *</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Passcode</label>
                 <input type="password" value={passcode} onChange={e => setPasscode(e.target.value)}
-                  className="w-full px-3 py-2 rounded border text-sm outline-none font-mono"
+                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
                   style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
               </div>
             )}
@@ -236,10 +238,10 @@ export default function TestTake() {
               setTimeLeft(test.settings.timeLimitMinutes ? test.settings.timeLimitMinutes * 60 : null);
               setPhase('running');
             }}
-            className="w-full mt-4 py-2.5 rounded text-sm font-semibold border-none cursor-pointer"
+            className="w-full mt-4 py-2 rounded text-xs font-semibold border-none cursor-pointer"
             style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
           >
-            Begin Test
+            Begin test
           </button>
         </div>
       </div>
@@ -294,16 +296,16 @@ export default function TestTake() {
         <style>{`.test-content * { user-select: none !important; }`}</style>
       )}
 
-      {/* Header */}
+      {/* Header - compact and professional */}
       <header className="border-b sticky top-0 z-40" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
-          <span className="font-semibold text-sm truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+        <div className="max-w-5xl mx-auto px-4 h-10 flex items-center justify-between">
+          <span className="font-semibold text-xs truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
             {test.settings.name}
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {timeLeft !== null && <TimerDisplay seconds={timeLeft} />}
-            <span className="text-sm hidden sm:inline" style={{ color: 'var(--text-muted)' }}>
-              {answeredCount}/{questions.length} answered
+            <span className="text-xs hidden sm:inline" style={{ color: 'var(--text-muted)' }}>
+              {answeredCount}/{questions.length}
             </span>
           </div>
         </div>
