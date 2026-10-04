@@ -31,23 +31,11 @@ export default function Results() {
     loadData();
   }, [id]);
 
-  if (loading) {
-    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading results…</div>;
-  }
-
-  if (!test) {
-    return (
-      <div className="py-12 text-center">
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Test not found.</p>
-        <button onClick={() => navigate('/dashboard')} className="mt-3 px-3 py-1.5 text-xs font-medium border cursor-pointer rounded"
-          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-          Back to tests
-        </button>
-      </div>
-    );
-  }
-
-  const stats = getTestStats(test.id, attempts);
+  // All hooks must be called before any conditional returns
+  const stats = useMemo(() => {
+    if (!test) return null;
+    return getTestStats(test.id, attempts);
+  }, [test, attempts]);
 
   const filtered = useMemo(() => {
     let result = [...attempts];
@@ -69,12 +57,8 @@ export default function Results() {
     return result;
   }, [attempts, search, sortField, sortDir]);
 
-  const toggleSort = (field: typeof sortField) => {
-    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDir('desc'); }
-  };
-
   const questionStats = useMemo(() => {
+    if (!test) return [];
     return test.questions.map((q: any) => {
       let correct = 0;
       let total = 0;
@@ -90,7 +74,29 @@ export default function Results() {
       }
       return { questionId: q.id, text: q.text.substring(0, 40), correct, total, rate: total > 0 ? Math.round((correct / total) * 100) : 0 };
     });
-  }, [test.questions, attempts]);
+  }, [test?.questions, attempts]);
+
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('desc'); }
+  };
+
+  // Now we can do conditional rendering after all hooks
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading results…</div>;
+  }
+
+  if (!test) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Test not found.</p>
+        <button onClick={() => navigate('/dashboard')} className="mt-3 px-3 py-1.5 text-xs font-medium border cursor-pointer rounded"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
+          Back to tests
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>

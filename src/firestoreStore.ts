@@ -456,18 +456,23 @@ export async function getAttempt(id: string): Promise<Attempt | null> {
 
 export async function getTestAttempts(testId: string): Promise<Attempt[]> {
   try {
+    // Query without orderBy to avoid needing a composite index
     const q = query(
       collection(db, 'attempts'),
-      where('testId', '==', testId),
-      orderBy('startedAt', 'desc')
+      where('testId', '==', testId)
     );
     
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
+    const attempts = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Attempt));
+    
+    // Sort client-side by startedAt descending
+    return attempts.sort((a, b) => 
+      new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+    );
   } catch (error) {
     console.error('Error getting test attempts:', error);
     return [];
