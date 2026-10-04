@@ -308,11 +308,30 @@ export async function getUserTests(userId?: string): Promise<Test[]> {
   }
 }
 
+// Helper to remove undefined values (Firestore doesn't accept undefined)
+function removeUndefined(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefined(item));
+  }
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        cleaned[key] = removeUndefined(obj[key]);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 export async function updateTest(test: Test): Promise<void> {
   try {
     const { id, ...testData } = test;
+    const cleanedData = removeUndefined(testData);
     await updateDoc(doc(db, 'tests', id), {
-      ...testData,
+      ...cleanedData,
       updatedAt: new Date().toISOString()
     });
   } catch (error) {
