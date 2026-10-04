@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { getTheme, toggleTheme } from '../store';
+import { getTheme, toggleTheme, resetPassword } from '../store';
 import { Sun, Moon, ClipboardList, ArrowLeft } from 'lucide-react';
 
 export default function ResetPassword() {

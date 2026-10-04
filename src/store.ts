@@ -1,418 +1,228 @@
-// ============================================================
-// SuperiorTests — Data Store (localStorage-backed, structured for backend swap)
-// ============================================================
+// Synchronous wrapper around Firestore for backward compatibility
+// This caches data locally and syncs with Firestore in the background
 
-import { AppState, User, Test, Attempt, Session } from './types';
+import * as firestoreStore from './firestoreStore';
+import type { User, Test, Attempt } from './types';
 
-const STORAGE_KEY = 'superiortests_data';
+// Local cache
+let cachedUser: User | null = null;
+let cachedTests: Test[] = [];
+let cachedAttempts: Map<string, Attempt[]> = new Map();
+let currentTheme: 'light' | 'dark' = 
+  (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
 
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+// Initialize from localStorage
+const savedUser = localStorage.getItem('currentUser');
+if (savedUser) {
+  cachedUser = JSON.parse(savedUser);
 }
 
-function generateSlug(): string {
-  return Math.random().toString(36).substr(2, 8).toUpperCase();
-}
+// ============================================
+// AUTH FUNCTIONS (synchronous wrappers)
+// ============================================
 
-function getDefaultState(): AppState {
-  return {
-    users: [],
-    tests: [],
-    attempts: [],
-    session: null,
-    theme: 'light',
-  };
-}
-
-function loadState(): AppState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      return JSON.parse(raw);
+export async function signup(email: string, name: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const result = await firestoreStore.signup(email, name, password);
+  if (result.success) {
+    const user = firestoreStore.getCurrentUser();
+    if (user) {
+      cachedUser = user;
+      localStorage.setItem('currentUser', JSON.stringify(user));
     }
-  } catch (e) {
-    console.error('Failed to load state:', e);
   }
-  return getDefaultState();
+  return result;
 }
 
-function saveState(state: AppState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const result = await firestoreStore.login(email, password);
+  if (result.success) {
+    const user = firestoreStore.getCurrentUser();
+    if (user) {
+      cachedUser = user;
+      localStorage.setItem('currentUser', JSON.stringify(user));
+    }
+  }
+  return result;
 }
 
-let state: AppState = loadState();
-
-// Simple hash for demo (in production, use bcrypt on server)
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36) + str.length.toString(36);
-}
-
-// ============================================================
-// Auth
-// ============================================================
-
-export function signup(email: string, name: string, password: string): { success: boolean; error?: string } {
-  if (!email || !name || !password) {
-    return { success: false, error: 'All fields are required.' };
-  }
-  if (password.length < 8) {
-    return { success: false, error: 'Password must be at least 8 characters.' };
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { success: false, error: 'Please enter a valid email address.' };
-  }
-  const existing = state.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    return { success: false, error: 'An account with this email already exists.' };
-  }
-
-  const user: User = {
-    id: generateId(),
-    email: email.toLowerCase(),
-    name,
-    passwordHash: simpleHash(password),
-    createdAt: new Date().toISOString(),
-  };
-  state.users.push(user);
-
-  const session: Session = {
-    userId: user.id,
-    token: generateId() + generateId(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  };
-  state.session = session;
-  saveState(state);
-  return { success: true };
-}
-
-export function login(email: string, password: string): { success: boolean; error?: string } {
-  const user = state.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) {
-    return { success: false, error: 'Invalid email or password.' };
-  }
-  if (user.passwordHash !== simpleHash(password)) {
-    return { success: false, error: 'Invalid email or password.' };
-  }
-
-  const session: Session = {
-    userId: user.id,
-    token: generateId() + generateId(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  };
-  state.session = session;
-  saveState(state);
-  return { success: true };
-}
-
-export function logout(): void {
-  state.session = null;
-  saveState(state);
+export async function logout(): Promise<void> {
+  await firestoreStore.logout();
+  cachedUser = null;
+  localStorage.removeItem('currentUser');
 }
 
 export function getCurrentUser(): User | null {
-  if (!state.session) return null;
-  if (new Date(state.session.expiresAt) < new Date()) {
-    state.session = null;
-    saveState(state);
-    return null;
-  }
-  return state.users.find(u => u.id === state.session!.userId) || null;
+  return cachedUser;
 }
 
-export function updateProfile(name: string, email: string): { success: boolean; error?: string } {
-  const user = getCurrentUser();
-  if (!user) return { success: false, error: 'Not logged in.' };
-  const existing = state.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== user.id);
-  if (existing) return { success: false, error: 'Email already in use.' };
-  user.name = name;
-  user.email = email.toLowerCase();
-  saveState(state);
-  return { success: true };
+export async function updateProfile(name: string, email: string): Promise<{ success: boolean; error?: string }> {
+  const result = await firestoreStore.updateProfile(name, email);
+  if (result.success && cachedUser) {
+    cachedUser = { ...cachedUser, name, email };
+    localStorage.setItem('currentUser', JSON.stringify(cachedUser));
+  }
+  return result;
 }
 
-export function changePassword(currentPassword: string, newPassword: string): { success: boolean; error?: string } {
-  const user = getCurrentUser();
-  if (!user) return { success: false, error: 'Not logged in.' };
-  if (user.passwordHash !== simpleHash(currentPassword)) {
-    return { success: false, error: 'Current password is incorrect.' };
-  }
-  if (newPassword.length < 8) {
-    return { success: false, error: 'New password must be at least 8 characters.' };
-  }
-  user.passwordHash = simpleHash(newPassword);
-  saveState(state);
-  return { success: true };
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  return firestoreStore.changePassword(currentPassword, newPassword);
 }
 
-// ============================================================
-// Tests
-// ============================================================
+export async function resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+  return firestoreStore.resetPassword(email);
+}
 
-export function createTest(ownerId: string, name: string): Test {
-  const test: Test = {
-    id: generateId(),
-    ownerId,
-    slug: generateSlug(),
-    published: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    settings: {
-      name,
-      description: '',
-      timeLimitMinutes: null,
-      attemptLimit: null,
-      passcode: null,
-      emailWhitelist: [],
-      studentIdList: [],
-      accessMode: 'open',
-      startDate: null,
-      endDate: null,
-      showResults: true,
-      showCorrectAnswers: true,
-      completionMessage: 'Thank you. Your responses have been recorded.',
-      negativeMarking: false,
-      negativeMarkingPenalty: 0.25,
-      allowBlankSubmissions: true,
-      onePerPage: false,
-      shuffleQuestions: false,
-      shuffleOptions: false,
-      antiCheat: {
-        tabSwitchDetection: false,
-        fullscreenEnforcement: false,
-        disableCopyPaste: false,
-        disableRightClick: false,
-        disableTextSelection: false,
-        watermark: false,
-        preventRefresh: false,
-        resumeControl: false,
-      },
-      notifyOnSubmit: false,
-    },
-    questions: [],
-  };
-  state.tests.push(test);
-  saveState(state);
+// ============================================
+// TEST FUNCTIONS (synchronous wrappers)
+// ============================================
+
+export async function createTest(name: string): Promise<Test> {
+  const test = await firestoreStore.createTest(name);
+  cachedTests = [test, ...cachedTests];
   return test;
 }
 
-export function getTest(id: string): Test | null {
-  return state.tests.find(t => t.id === id) || null;
+export async function getTest(id: string): Promise<Test | null> {
+  // Try cache first
+  const cached = cachedTests.find(t => t.id === id);
+  if (cached) return cached;
+  
+  // Fetch from Firestore
+  const test = await firestoreStore.getTest(id);
+  if (test) {
+    const idx = cachedTests.findIndex(t => t.id === id);
+    if (idx >= 0) {
+      cachedTests[idx] = test;
+    } else {
+      cachedTests.push(test);
+    }
+  }
+  return test;
 }
 
-export function getTestBySlug(slug: string): Test | null {
-  return state.tests.find(t => t.slug === slug) || null;
+export async function getTestBySlug(slug: string): Promise<Test | null> {
+  // Try cache first
+  const cached = cachedTests.find(t => t.slug === slug);
+  if (cached) return cached;
+  
+  // Fetch from Firestore
+  return firestoreStore.getTestBySlug(slug);
 }
 
-export function getUserTests(userId: string): Test[] {
-  return state.tests.filter(t => t.ownerId === userId).sort((a, b) =>
-    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
+export async function getUserTests(userId: string): Promise<Test[]> {
+  const tests = await firestoreStore.getUserTests();
+  cachedTests = tests;
+  return tests;
 }
 
-export function updateTest(test: Test): void {
-  const idx = state.tests.findIndex(t => t.id === test.id);
+export async function updateTest(test: Test): Promise<void> {
+  await firestoreStore.updateTest(test);
+  const idx = cachedTests.findIndex(t => t.id === test.id);
   if (idx >= 0) {
-    test.updatedAt = new Date().toISOString();
-    state.tests[idx] = test;
-    saveState(state);
+    cachedTests[idx] = test;
   }
 }
 
-export function deleteTest(id: string): void {
-  state.tests = state.tests.filter(t => t.id !== id);
-  state.attempts = state.attempts.filter(a => a.testId !== id);
-  saveState(state);
+export async function deleteTest(id: string): Promise<void> {
+  await firestoreStore.deleteTest(id);
+  cachedTests = cachedTests.filter(t => t.id !== id);
 }
 
-export function publishTest(id: string): void {
-  const test = getTest(id);
+export async function publishTest(id: string): Promise<void> {
+  await firestoreStore.publishTest(id);
+  const test = cachedTests.find(t => t.id === id);
   if (test) {
     test.published = true;
-    test.updatedAt = new Date().toISOString();
-    saveState(state);
   }
 }
 
-export function unpublishTest(id: string): void {
-  const test = getTest(id);
+export async function unpublishTest(id: string): Promise<void> {
+  await firestoreStore.unpublishTest(id);
+  const test = cachedTests.find(t => t.id === id);
   if (test) {
     test.published = false;
-    test.updatedAt = new Date().toISOString();
-    saveState(state);
   }
 }
 
-// ============================================================
-// Attempts
-// ============================================================
+// ============================================
+// ATTEMPT FUNCTIONS (synchronous wrappers)
+// ============================================
 
-export function createAttempt(testId: string, takerName: string, takerFatherName: string, takerEmail: string, takerStudentId: string): Attempt {
-  const existingAttempts = state.attempts.filter(a => a.testId === testId && 
-    (a.takerEmail === takerEmail || a.takerStudentId === takerStudentId));
-  
-  const attempt: Attempt = {
-    id: generateId(),
-    testId,
-    takerName,
-    takerFatherName,
-    takerEmail,
-    takerStudentId,
-    answers: [],
-    score: null,
-    maxScore: 0,
-    percentage: null,
-    startedAt: new Date().toISOString(),
-    submittedAt: null,
-    timeTakenSeconds: null,
-    attemptNumber: existingAttempts.length + 1,
-    status: 'in-progress',
-    antiCheatEvents: [],
-  };
-  state.attempts.push(attempt);
-  saveState(state);
+export async function createAttempt(
+  testId: string,
+  takerName: string,
+  takerFatherName: string,
+  takerEmail: string,
+  takerStudentId: string
+): Promise<Attempt> {
+  const attempt = await firestoreStore.createAttempt(testId, takerName, takerFatherName, takerEmail, takerStudentId);
+  const attempts = cachedAttempts.get(testId) || [];
+  attempts.unshift(attempt);
+  cachedAttempts.set(testId, attempts);
   return attempt;
 }
 
-export function getAttempt(id: string): Attempt | null {
-  return state.attempts.find(a => a.id === id) || null;
+export async function getAttempt(id: string): Promise<Attempt | null> {
+  // Try cache first
+  for (const attempts of cachedAttempts.values()) {
+    const cached = attempts.find(a => a.id === id);
+    if (cached) return cached;
+  }
+  
+  // Fetch from Firestore
+  return firestoreStore.getAttempt(id);
 }
 
-export function getTestAttempts(testId: string): Attempt[] {
-  return state.attempts.filter(a => a.testId === testId).sort((a, b) =>
-    new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-  );
+export async function getTestAttempts(testId: string): Promise<Attempt[]> {
+  const attempts = await firestoreStore.getTestAttempts(testId);
+  cachedAttempts.set(testId, attempts);
+  return attempts;
 }
 
-export function updateAttempt(attempt: Attempt): void {
-  const idx = state.attempts.findIndex(a => a.id === attempt.id);
+export async function updateAttempt(attempt: Attempt): Promise<void> {
+  await firestoreStore.updateAttempt(attempt);
+  const attempts = cachedAttempts.get(attempt.testId) || [];
+  const idx = attempts.findIndex(a => a.id === attempt.id);
   if (idx >= 0) {
-    state.attempts[idx] = attempt;
-    saveState(state);
+    attempts[idx] = attempt;
   }
 }
 
-export function submitAttempt(attemptId: string): Attempt | null {
-  const attempt = getAttempt(attemptId);
-  if (!attempt) return null;
-  
-  const test = getTest(attempt.testId);
-  if (!test) return null;
-
-  attempt.submittedAt = new Date().toISOString();
-  attempt.status = 'submitted';
-  
-  const startMs = new Date(attempt.startedAt).getTime();
-  const endMs = new Date(attempt.submittedAt).getTime();
-  attempt.timeTakenSeconds = Math.floor((endMs - startMs) / 1000);
-
-  // Calculate score
-  let totalScore = 0;
-  let maxScore = 0;
-
-  for (const question of test.questions) {
-    maxScore += question.points;
-    const answer = attempt.answers.find(a => a.questionId === question.id);
-    if (!answer) continue;
-
-    let isCorrect = false;
-    switch (question.type) {
-      case 'multiple-choice-single':
-      case 'true-false':
-        isCorrect = question.options?.some(o => o.isCorrect && o.text === answer.answer) || false;
-        break;
-      case 'multiple-choice-multi': {
-        const correctOptions = question.options?.filter(o => o.isCorrect).map(o => o.text) || [];
-        const selectedAnswers = Array.isArray(answer.answer) ? answer.answer : [];
-        isCorrect = correctOptions.length === selectedAnswers.length &&
-          correctOptions.every(c => selectedAnswers.includes(c));
-        break;
-      }
-      case 'fill-blank':
-      case 'short-answer':
-        isCorrect = (answer.answer as string).toLowerCase().trim() === 
-          (question.correctAnswer || '').toLowerCase().trim();
-        break;
-      case 'numeric': {
-        const numAnswer = parseFloat(answer.answer as string);
-        const numCorrect = parseFloat(question.correctAnswer || '0');
-        const tolerance = question.numericTolerance || 0;
-        isCorrect = Math.abs(numAnswer - numCorrect) <= tolerance;
-        break;
-      }
-      case 'matching': {
-        const pairs = question.matchingPairs || [];
-        const matchAnswers = answer.answer as Record<string, string>;
-        isCorrect = pairs.every(p => matchAnswers[p.id] === p.right);
-        break;
-      }
-      case 'essay':
-        isCorrect = false; // Requires manual grading
-        break;
-    }
-
-    if (isCorrect) {
-      totalScore += question.points;
-    } else if (test.settings.negativeMarking && question.type !== 'essay') {
-      const penalty = question.points * test.settings.negativeMarkingPenalty;
-      totalScore -= penalty;
+export async function submitAttempt(attemptId: string): Promise<Attempt | null> {
+  const attempt = await firestoreStore.submitAttempt(attemptId);
+  if (attempt) {
+    const attempts = cachedAttempts.get(attempt.testId) || [];
+    const idx = attempts.findIndex(a => a.id === attempt.id);
+    if (idx >= 0) {
+      attempts[idx] = attempt;
     }
   }
-
-  attempt.score = Math.max(0, totalScore);
-  attempt.maxScore = maxScore;
-  attempt.percentage = maxScore > 0 ? Math.round((attempt.score / maxScore) * 100) : 0;
-
-  saveState(state);
   return attempt;
 }
 
-// ============================================================
-// Theme
-// ============================================================
+// ============================================
+// THEME FUNCTIONS
+// ============================================
 
 export function getTheme(): 'light' | 'dark' {
-  return state.theme;
+  return currentTheme;
 }
 
 export function setTheme(theme: 'light' | 'dark'): void {
-  state.theme = theme;
-  saveState(state);
-  document.documentElement.className = theme;
+  currentTheme = theme;
+  localStorage.setItem('theme', theme);
+  document.documentElement.classList.remove('light', 'dark');
+  document.documentElement.classList.add(theme);
 }
 
 export function toggleTheme(): void {
-  const newTheme = state.theme === 'light' ? 'dark' : 'light';
-  setTheme(newTheme);
+  setTheme(currentTheme === 'light' ? 'dark' : 'light');
 }
 
-// ============================================================
-// Stats
-// ============================================================
+// ============================================
+// STATISTICS FUNCTIONS
+// ============================================
 
-export function getTestStats(testId: string) {
-  const attempts = state.attempts.filter(a => a.testId === testId && a.status === 'submitted');
-  if (attempts.length === 0) return null;
-
-  const scores = attempts.map(a => a.percentage || 0);
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const highest = Math.max(...scores);
-  const lowest = Math.min(...scores);
-  const passRate = (scores.filter(s => s >= 50).length / scores.length) * 100;
-
-  return {
-    totalAttempts: attempts.length,
-    averageScore: Math.round(avg),
-    highestScore: highest,
-    lowestScore: lowest,
-    passRate: Math.round(passRate),
-  };
+export function getTestStats(testId: string, attempts: Attempt[]) {
+  return firestoreStore.getTestStats(testId, attempts);
 }
-
-// Initialize theme on load
-document.documentElement.className = state.theme;
