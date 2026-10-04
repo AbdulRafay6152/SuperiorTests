@@ -1,0 +1,147 @@
+// ============================================================
+// SuperiorTests — Prisma Schema (PostgreSQL)
+// ============================================================
+// Run: npx prisma migrate dev --name init
+// Run: npx prisma generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users (teachers / admins) ──────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tests    Test[]
+  sessions Session[]
+}
+
+// ── Sessions (JWT refresh tokens) ──────────────────────────
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Tests ──────────────────────────────────────────────────
+model Test {
+  id          String   @id @default(cuid())
+  ownerId     String
+  slug        String   @unique @default(cuid())
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Settings stored as JSON for flexibility (Testmoz pattern)
+  settingsJson String @default("{}") @db.JsonB
+
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  Attempt[]
+
+  @@index([ownerId])
+  @@index([slug])
+}
+
+// ── Questions ──────────────────────────────────────────────
+model Question {
+  id        String @id @default(cuid())
+  testId    String
+  order     Int
+  type      String // multiple-choice-single | multiple-choice-multi | true-false | fill-blank | short-answer | essay | numeric | matching
+  text      String @db.Text
+  points    Int    @default(1)
+  dataJson  String @default("{}") @db.JsonB
+  // dataJson stores: options[], matchingPairs[], correctAnswer, correctAnswers[], numericTolerance, explanation
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId, order])
+}
+
+// ── Attempts ───────────────────────────────────────────────
+model Attempt {
+  id              String    @id @default(cuid())
+  testId          String
+  takerName       String
+  takerEmail      String    @default("")
+  takerStudentId  String    @default("")
+  answersJson     String    @default("[]") @db.JsonB
+  score           Float?
+  maxScore        Int       @default(0)
+  percentage      Float?
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  timeTakenSeconds Int?
+  attemptNumber   Int       @default(1)
+  status          String    @default("in-progress") // in-progress | submitted | paused | expired
+
+  test             Test              @relation(fields: [testId], references: [id], onDelete: Cascade)
+  antiCheatEvents  AntiCheatEvent[]
+
+  @@index([testId])
+  @@index([testId, takerEmail])
+  @@index([testId, takerStudentId])
+}
+
+// ── Anti-Cheat Events ──────────────────────────────────────
+model AntiCheatEvent {
+  id        String   @id @default(cuid())
+  attemptId String
+  type      String   // tab-switch | fullscreen-exit | copy-attempt | right-click | refresh-attempt | paste-attempt | selection-attempt
+  details   String?  @db.Text
+  timestamp DateTime @default(now())
+
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
+// ── Email Whitelist (per-test) ─────────────────────────────
+model EmailWhitelist {
+  id     String @id @default(cuid())
+  testId String
+  email  String
+
+  @@unique([testId, email])
+  @@index([testId])
+}
+
+// ── Student ID Whitelist (per-test) ────────────────────────
+model StudentIdWhitelist {
+  id        String @id @default(cuid())
+  testId    String
+  studentId String
+
+  @@unique([testId, studentId])
+  @@index([testId])
+}
+
+// ── Password Reset Tokens ──────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}

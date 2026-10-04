@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: superiortests-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: superiortests
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ──────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: superiortests-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/superiortests
+      JWT_SECRET: change-this-in-production
+      JWT_REFRESH_SECRET: change-this-refresh-secret
+      NODE_ENV: production
+      PORT: 3001
+      APP_URL: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Frontend (Vite preview) ──────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: superiortests-web
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
