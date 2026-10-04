@@ -39,6 +39,7 @@ export default function TestTake() {
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
     async function loadTest() {
@@ -312,7 +313,21 @@ export default function TestTake() {
 
               const newAttempt = await createAttempt(test.id, takerName, takerFatherName, takerEmail, takerStudentId);
               setAttempt(newAttempt);
-              setAnswers(test.questions.map((q: Question) => ({ questionId: q.id, answer: '', flagged: false, timeSpentSeconds: 0 })));
+              
+              // Shuffle questions and options ONCE when test starts
+              let questions = [...test.questions];
+              if (test.settings.shuffleQuestions) {
+                questions = questions.sort(() => Math.random() - 0.5);
+              }
+              if (test.settings.shuffleOptions) {
+                questions = questions.map(q => ({
+                  ...q,
+                  options: q.options ? [...q.options].sort(() => Math.random() - 0.5) : q.options
+                }));
+              }
+              setShuffledQuestions(questions);
+              
+              setAnswers(questions.map((q: Question) => ({ questionId: q.id, answer: '', flagged: false, timeSpentSeconds: 0 })));
               setTimeLeft(test.settings.timeLimitMinutes ? test.settings.timeLimitMinutes * 60 : null);
               setPhase('running');
             }}
@@ -348,7 +363,7 @@ export default function TestTake() {
   }
 
   // Running phase
-  const questions = test.questions;
+  const questions = shuffledQuestions.length > 0 ? shuffledQuestions : test.questions;
   const currentQ = questions[currentPage];
   const answeredCount = answers.filter((a: Answer) => a.answer !== '' && a.answer !== null).length;
   const acSettings = test.settings.antiCheat;
@@ -437,7 +452,6 @@ export default function TestTake() {
                 newAnswers[currentPage] = { ...newAnswers[currentPage], answer };
                 setAnswers(newAnswers);
               }}
-              shuffleOptions={test.settings.shuffleOptions}
             />
           )}
 
@@ -512,15 +526,12 @@ function TimerDisplay({ seconds }: { seconds: number }) {
   );
 }
 
-function QuestionRenderer({ question, answer, onChange, shuffleOptions }: {
+function QuestionRenderer({ question, answer, onChange }: {
   question: Question;
   answer: string | string[] | Record<string, string>;
   onChange: (answer: any) => void;
-  shuffleOptions: boolean;
 }) {
-  const options = question.options && shuffleOptions
-    ? [...question.options].sort(() => Math.random() - 0.5)
-    : question.options || [];
+  const options = question.options || [];
 
   return (
     <div className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
