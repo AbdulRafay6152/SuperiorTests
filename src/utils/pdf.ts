@@ -108,6 +108,7 @@ export function generatePDFReport(test: Test, attempt: Attempt): void {
   doc.setFontSize(9);
   doc.setTextColor(...TEXT_SECONDARY);
   doc.text(`Name: ${attempt.takerName}`, 14, y); y += 5;
+  if (attempt.takerFatherName) { doc.text(`Father's Name: ${attempt.takerFatherName}`, 14, y); y += 5; }
   doc.text(`Email: ${attempt.takerEmail}`, 14, y); y += 5;
   if (attempt.takerStudentId) { doc.text(`Student ID: ${attempt.takerStudentId}`, 14, y); y += 5; }
   doc.text(`Attempt: #${attempt.attemptNumber}`, 14, y); y += 5;
@@ -240,11 +241,11 @@ export function generateBulkPDFReport(test: Test, attempts: Attempt[]): void {
   doc.setFontSize(8);
   doc.text('#', 16, y + 5.5);
   doc.text('Name', 24, y + 5.5);
-  doc.text('Email', 75, y + 5.5);
-  doc.text('Score', 130, y + 5.5);
-  doc.text('%', 150, y + 5.5);
-  doc.text('Time', 165, y + 5.5);
-  doc.text('Flags', 185, y + 5.5);
+  doc.text("Father's Name", 65, y + 5.5);
+  doc.text('Score', 120, y + 5.5);
+  doc.text('%', 140, y + 5.5);
+  doc.text('Time', 155, y + 5.5);
+  doc.text('Flags', 180, y + 5.5);
   y += 8;
 
   // Table rows
@@ -265,18 +266,18 @@ export function generateBulkPDFReport(test: Test, attempts: Attempt[]): void {
 
     doc.setTextColor(...TEXT);
     doc.text(String(idx + 1), 16, y + 5);
-    doc.text(attempt.takerName.substring(0, 25), 24, y + 5);
+    doc.text(attempt.takerName.substring(0, 20), 24, y + 5);
     doc.setTextColor(...TEXT_SECONDARY);
-    doc.text(attempt.takerEmail.substring(0, 25), 75, y + 5);
+    doc.text((attempt.takerFatherName || '—').substring(0, 25), 65, y + 5);
     doc.setTextColor(...TEXT);
-    doc.text(`${attempt.score}/${attempt.maxScore}`, 130, y + 5);
+    doc.text(`${attempt.score}/${attempt.maxScore}`, 120, y + 5);
     const pct = attempt.percentage || 0;
     doc.setTextColor(pct >= 50 ? 5 : 220, pct >= 50 ? 150 : 38, pct >= 50 ? 105 : 38);
-    doc.text(`${pct}%`, 150, y + 5);
+    doc.text(`${pct}%`, 140, y + 5);
     doc.setTextColor(...TEXT_SECONDARY);
     const timeStr = attempt.timeTakenSeconds ? `${Math.floor(attempt.timeTakenSeconds / 60)}m` : '—';
-    doc.text(timeStr, 165, y + 5);
-    doc.text(attempt.antiCheatEvents.length > 0 ? String(attempt.antiCheatEvents.length) : '—', 185, y + 5);
+    doc.text(timeStr, 155, y + 5);
+    doc.text(attempt.antiCheatEvents.length > 0 ? String(attempt.antiCheatEvents.length) : '—', 180, y + 5);
     y += 7;
   });
 
@@ -293,11 +294,12 @@ export function generateBulkPDFReport(test: Test, attempts: Attempt[]): void {
 }
 
 export function exportCSV(test: Test, attempts: Attempt[]): void {
-  const headers = ['#', 'Name', 'Email', 'Student ID', 'Score', 'Max Score', 'Percentage', 'Time (seconds)', 'Submitted At', 'Attempt #', 'Anti-Cheat Flags'];
+  const headers = ['#', 'Name', "Father's Name", 'Email', 'Student ID', 'Score', 'Max Score', 'Percentage', 'Time (seconds)', 'Submitted At', 'Attempt #', 'Anti-Cheat Flags'];
   
   const rows = attempts.map((a, idx) => [
     String(idx + 1),
     `"${a.takerName}"`,
+    `"${a.takerFatherName || ''}"`,
     `"${a.takerEmail}"`,
     `"${a.takerStudentId}"`,
     String(a.score ?? ''),

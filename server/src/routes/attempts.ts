@@ -10,6 +10,7 @@ const router = Router();
 const startAttemptSchema = z.object({
   testSlug: z.string(),
   takerName: z.string().min(1),
+  takerFatherName: z.string().min(1),
   takerEmail: z.string().email().optional(),
   takerStudentId: z.string().optional(),
   passcode: z.string().optional(),
@@ -68,6 +69,7 @@ router.post('/start', async (req: Request, res: Response) => {
       data: {
         testId: test.id,
         takerName: data.takerName,
+        takerFatherName: data.takerFatherName,
         takerEmail: data.takerEmail?.toLowerCase() || '',
         takerStudentId: data.takerStudentId || '',
         attemptNumber,

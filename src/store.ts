@@ -252,7 +252,7 @@ export function unpublishTest(id: string): void {
 // Attempts
 // ============================================================
 
-export function createAttempt(testId: string, takerName: string, takerEmail: string, takerStudentId: string): Attempt {
+export function createAttempt(testId: string, takerName: string, takerFatherName: string, takerEmail: string, takerStudentId: string): Attempt {
   const existingAttempts = state.attempts.filter(a => a.testId === testId && 
     (a.takerEmail === takerEmail || a.takerStudentId === takerStudentId));
   
@@ -260,6 +260,7 @@ export function createAttempt(testId: string, takerName: string, takerEmail: str
     id: generateId(),
     testId,
     takerName,
+    takerFatherName,
     takerEmail,
     takerStudentId,
     answers: [],

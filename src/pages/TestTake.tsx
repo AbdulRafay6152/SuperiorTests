@@ -24,8 +24,9 @@ export default function TestTake() {
   const navigate = useNavigate();
   const test = getTestBySlug(slug || '');
 
-  const [phase, setPhase] = useState<'gate' | 'running' | 'submitted'>('gate');
+  const [phase, setPhase] = useState<'gate-access' | 'gate-identity' | 'running' | 'submitted'>('gate-access');
   const [takerName, setTakerName] = useState('');
+  const [takerFatherName, setTakerFatherName] = useState('');
   const [takerEmail, setTakerEmail] = useState('');
   const [takerStudentId, setTakerStudentId] = useState('');
   const [passcode, setPasscode] = useState('');
@@ -160,8 +161,13 @@ export default function TestTake() {
     if (timerRef.current) clearInterval(timerRef.current);
   }
 
-  // Gate phase
-  if (phase === 'gate') {
+  // Gate Step 1: Access verification based on teacher's settings
+  if (phase === 'gate-access') {
+    const needsEmail = test.settings.accessMode === 'whitelist-email' || test.settings.accessMode === 'open';
+    const needsStudentId = test.settings.accessMode === 'whitelist-id' || test.settings.accessMode === 'open';
+    const needsPasscode = test.settings.accessMode === 'passcode';
+    const needsAnyAccessField = needsEmail || needsStudentId || needsPasscode;
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-full max-w-sm">
@@ -176,8 +182,112 @@ export default function TestTake() {
           <div className="text-xs mb-4 p-2.5 rounded border space-y-0.5" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
             <div>{test.questions.length} questions · {test.questions.reduce((s, q) => s + q.points, 0)} points</div>
             {test.settings.timeLimitMinutes && <div>Time limit: {test.settings.timeLimitMinutes} min</div>}
-            {test.settings.attemptLimit && <div>Attempts: {test.settings.attemptLimit}</div>}
+            {test.settings.attemptLimit && <div>Attempts allowed: {test.settings.attemptLimit}</div>}
           </div>
+
+          {gateError && (
+            <div className="mb-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+              {gateError}
+            </div>
+          )}
+
+          {needsAnyAccessField ? (
+            <>
+              <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
+                Please verify your identity to access this test.
+              </p>
+              <div className="space-y-2.5">
+                {needsEmail && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Email address</label>
+                    <input type="email" value={takerEmail} onChange={e => setTakerEmail(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      placeholder="you@university.edu" />
+                  </div>
+                )}
+                {needsStudentId && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Student ID</label>
+                    <input type="text" value={takerStudentId} onChange={e => setTakerStudentId(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
+                      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      placeholder="e.g. STU2024001" />
+                  </div>
+                )}
+                {needsPasscode && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Test passcode</label>
+                    <input type="password" value={passcode} onChange={e => setPasscode(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
+                      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      placeholder="Enter passcode provided by instructor" />
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setGateError('');
+                  if (needsPasscode && passcode !== test.settings.passcode) {
+                    setGateError('Incorrect passcode.'); return;
+                  }
+                  if (test.settings.accessMode === 'whitelist-email' && !test.settings.emailWhitelist.includes(takerEmail.toLowerCase())) {
+                    setGateError('This email is not authorized to take this test.'); return;
+                  }
+                  if (test.settings.accessMode === 'whitelist-id' && !test.settings.studentIdList.includes(takerStudentId)) {
+                    setGateError('This student ID is not authorized to take this test.'); return;
+                  }
+                  if (needsEmail && !takerEmail.trim()) {
+                    setGateError('Email is required.'); return;
+                  }
+                  if (needsStudentId && !takerStudentId.trim()) {
+                    setGateError('Student ID is required.'); return;
+                  }
+                  setPhase('gate-identity');
+                }}
+                className="w-full mt-4 py-2 rounded text-xs font-semibold border-none cursor-pointer"
+                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+              >
+                Continue
+              </button>
+            </>
+          ) : (
+            // Open mode with no access fields — skip directly to identity
+            <button
+              onClick={() => setPhase('gate-identity')}
+              className="w-full py-2 rounded text-xs font-semibold border-none cursor-pointer"
+              style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+            >
+              Continue
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Gate Step 2: Collect name and father's name
+  if (phase === 'gate-identity') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
+        <div className="w-full max-w-sm">
+          <div className="mb-4 pb-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+            <h1 className="text-base font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+              {test.settings.name}
+            </h1>
+            <button
+              onClick={() => { setPhase('gate-access'); setGateError(''); }}
+              className="text-xs border-none bg-transparent cursor-pointer"
+              style={{ color: 'var(--accent)' }}
+            >
+              ← Back
+            </button>
+          </div>
+
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Enter your details to begin the test. This information will be recorded with your submission.
+          </p>
 
           {gateError && (
             <div className="mb-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
@@ -187,52 +297,28 @@ export default function TestTake() {
 
           <div className="space-y-2.5">
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name <span style={{ color: 'var(--error)' }}>*</span></label>
               <input type="text" value={takerName} onChange={e => setTakerName(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
-                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                placeholder="Your full name" />
             </div>
-            {test.settings.accessMode !== 'whitelist-id' && (
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Email</label>
-                <input type="email" value={takerEmail} onChange={e => setTakerEmail(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
-              </div>
-            )}
-            {test.settings.accessMode !== 'whitelist-email' && (
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Student ID</label>
-                <input type="text" value={takerStudentId} onChange={e => setTakerStudentId(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
-              </div>
-            )}
-            {test.settings.accessMode === 'passcode' && (
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Passcode</label>
-                <input type="password" value={passcode} onChange={e => setPasscode(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Father's name <span style={{ color: 'var(--error)' }}>*</span></label>
+              <input type="text" value={takerFatherName} onChange={e => setTakerFatherName(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                placeholder="Your father's full name" />
+            </div>
           </div>
 
           <button
             onClick={() => {
               setGateError('');
-              if (!takerName.trim()) { setGateError('Name is required.'); return; }
-              if (test.settings.accessMode === 'passcode' && passcode !== test.settings.passcode) {
-                setGateError('Incorrect passcode.'); return;
-              }
-              if (test.settings.accessMode === 'whitelist-email' && !test.settings.emailWhitelist.includes(takerEmail.toLowerCase())) {
-                setGateError('Your email is not authorized to take this test.'); return;
-              }
-              if (test.settings.accessMode === 'whitelist-id' && !test.settings.studentIdList.includes(takerStudentId)) {
-                setGateError('Your student ID is not authorized to take this test.'); return;
-              }
+              if (!takerName.trim()) { setGateError('Full name is required.'); return; }
+              if (!takerFatherName.trim()) { setGateError("Father's name is required."); return; }
 
-              const newAttempt = createAttempt(test.id, takerName, takerEmail, takerStudentId);
+              const newAttempt = createAttempt(test.id, takerName, takerFatherName, takerEmail, takerStudentId);
               setAttempt(newAttempt);
               setAnswers(test.questions.map(q => ({ questionId: q.id, answer: '', flagged: false, timeSpentSeconds: 0 })));
               setTimeLeft(test.settings.timeLimitMinutes ? test.settings.timeLimitMinutes * 60 : null);

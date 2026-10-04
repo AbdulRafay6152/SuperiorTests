@@ -46,6 +46,11 @@ export default function ResultDetail() {
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
             {attempt.takerName}
           </h1>
+          {attempt.takerFatherName && (
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              S/O {attempt.takerFatherName}
+            </p>
+          )}
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             {attempt.takerEmail} {attempt.takerStudentId && `· ID: ${attempt.takerStudentId}`}
           </p>

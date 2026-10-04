@@ -105,11 +105,12 @@ model Question {
 // ── Attempts ───────────────────────────────────────────────
 
 model Attempt {
-  id             String   @id @default(cuid())
-  testId         String
-  takerName      String
-  takerEmail     String   @default("")
-  takerStudentId String   @default("")
+  id               String   @id @default(cuid())
+  testId           String
+  takerName        String
+  takerFatherName  String   @default("") @map("taker_father_name")
+  takerEmail       String   @default("")
+  takerStudentId   String   @default("")
   attemptNumber  Int      @default(1)
   status         String   @default("in-progress") // in-progress | submitted | paused | expired
   score          Float?

@@ -177,6 +177,9 @@ export default function Results() {
                 <tr key={attempt.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
                   <td className="px-3 py-2">
                     <div className="text-xs font-medium" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
+                    {attempt.takerFatherName && (
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>S/O {attempt.takerFatherName}</div>
+                    )}
                     <div className="text-xs text-mono" style={{ color: 'var(--text-muted)' }}>
                       {attempt.takerEmail}{attempt.takerStudentId && ` · ${attempt.takerStudentId}`}
                     </div>

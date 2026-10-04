@@ -103,6 +103,7 @@ export interface Attempt {
   id: string;
   testId: string;
   takerName: string;
+  takerFatherName: string;
   takerEmail: string;
   takerStudentId: string;
   answers: Answer[];
