@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getCurrentUser, getTest, createTest, updateTest, publishTest } from '../store';
-import { Question, QuestionType, QuestionOption, MatchingPair } from '../types';
+import { Test, Question, QuestionType, QuestionOption, MatchingPair } from '../types';
 import { Plus, Trash2, GripVertical, Settings, Eye, ChevronDown, Import } from 'lucide-react';
 
 function generateId(): string {
@@ -23,10 +23,7 @@ export default function TestEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = getCurrentUser();
-  const [test, setTest] = useState(() => {
-    if (id) return getTest(id);
-    return null;
-  });
+  const [test, setTest] = useState<Test | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkPreview, setBulkPreview] = useState<Partial<Question>[]>([]);
@@ -37,8 +34,13 @@ export default function TestEditor() {
     if (!id) {
       const newTest = createTest(user.id, 'Untitled Test');
       navigate(`/test/${newTest.id}/edit`, { replace: true });
-    } else if (!test) {
-      navigate('/dashboard');
+    } else {
+      const loadedTest = getTest(id);
+      if (loadedTest) {
+        setTest(loadedTest);
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [id, user]);
 
@@ -89,7 +91,8 @@ export default function TestEditor() {
   };
 
   const removeQuestion = (idx: number) => {
-    const questions = test.questions.filter((_, i) => i !== idx).map((q, i) => ({ ...q, order: i }));
+    if (!test) return;
+    const questions = test.questions.filter((_: Question, i: number) => i !== idx).map((q: Question, i: number) => ({ ...q, order: i }));
     setTest({ ...test, questions });
   };
 
@@ -178,7 +181,7 @@ export default function TestEditor() {
     setBulkPreview([]);
   };
 
-  const totalPoints = test.questions.reduce((sum, q) => sum + q.points, 0);
+  const totalPoints = test?.questions.reduce((sum: number, q: Question) => sum + q.points, 0) || 0;
 
   return (
     <div>
@@ -286,7 +289,7 @@ export default function TestEditor() {
 
       {/* Questions */}
       <div className="space-y-4">
-        {test.questions.map((q, idx) => (
+        {test!.questions.map((q: Question, idx: number) => (
           <QuestionCard
             key={q.id}
             question={q}

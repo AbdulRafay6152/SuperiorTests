@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser, getUserTests, deleteTest, getTestStats, publishTest, unpublishTest } from '../store';
 import { Test } from '../types';
@@ -8,7 +8,13 @@ import { format } from 'date-fns';
 export default function Dashboard() {
   const navigate = useNavigate();
   const user = getCurrentUser();
-  const [tests, setTests] = useState(getUserTests(user!.id));
+  const [tests, setTests] = useState<Test[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      setTests(getUserTests(user.id));
+    }
+  }, [user]);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 

@@ -1,30 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getTest, updateTest } from '../store';
-import { TestSettings as TestSettingsType } from '../types';
+import { TestSettings as TestSettingsType, Test } from '../types';
 import { Save, ArrowLeft } from 'lucide-react';
+
+function getDefaultSettings(): TestSettingsType {
+  return {
+    name: '', description: '', timeLimitMinutes: null, attemptLimit: null,
+    passcode: null, emailWhitelist: [], studentIdList: [], accessMode: 'open',
+    startDate: null, endDate: null, showResults: true, showCorrectAnswers: true,
+    completionMessage: 'Thank you. Your responses have been recorded.',
+    negativeMarking: false, negativeMarkingPenalty: 0.25, allowBlankSubmissions: true,
+    onePerPage: false, shuffleQuestions: false, shuffleOptions: false,
+    antiCheat: { tabSwitchDetection: false, fullscreenEnforcement: false, disableCopyPaste: false,
+      disableRightClick: false, disableTextSelection: false, watermark: false, preventRefresh: false, resumeControl: false },
+    notifyOnSubmit: false,
+  };
+}
 
 export default function TestSettingsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const test = getTest(id || '');
-  const [settings, setSettings] = useState<TestSettingsType>(test?.settings || getDefaultSettings());
+  const [test, setTest] = useState<Test | null>(null);
+  const [settings, setSettings] = useState<TestSettingsType>(getDefaultSettings());
   const [saving, setSaving] = useState(false);
 
-  if (!test) { navigate('/dashboard'); return null; }
+  useEffect(() => {
+    if (id) {
+      const loaded = getTest(id);
+      if (loaded) {
+        setTest(loaded);
+        setSettings(loaded.settings);
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [id]);
 
-  function getDefaultSettings(): TestSettingsType {
-    return {
-      name: '', description: '', timeLimitMinutes: null, attemptLimit: null,
-      passcode: null, emailWhitelist: [], studentIdList: [], accessMode: 'open',
-      startDate: null, endDate: null, showResults: true, showCorrectAnswers: true,
-      completionMessage: 'Thank you. Your responses have been recorded.',
-      negativeMarking: false, negativeMarkingPenalty: 0.25, allowBlankSubmissions: true,
-      onePerPage: false, shuffleQuestions: false, shuffleOptions: false,
-      antiCheat: { tabSwitchDetection: false, fullscreenEnforcement: false, disableCopyPaste: false,
-        disableRightClick: false, disableTextSelection: false, watermark: false, preventRefresh: false, resumeControl: false },
-      notifyOnSubmit: false,
-    };
+  if (!test) {
+    return (
+      <div className="text-center py-12">
+        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+      </div>
+    );
   }
 
   const save = () => {

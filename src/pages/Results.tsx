@@ -9,12 +9,23 @@ import { generatePDFReport, generateBulkPDFReport, exportCSV } from '../utils/pd
 export default function Results() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const test = getTest(id || '');
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'name' | 'score' | 'date'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  if (!test) { navigate('/dashboard'); return null; }
+  const test = getTest(id || '');
+
+  if (!test) {
+    return (
+      <div className="text-center py-12">
+        <p style={{ color: 'var(--text-secondary)' }}>Test not found.</p>
+        <button onClick={() => navigate('/dashboard')} className="mt-4 px-4 py-2 rounded text-sm font-medium border cursor-pointer"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   const attempts = getTestAttempts(test.id).filter(a => a.status === 'submitted');
   const stats = getTestStats(test.id);

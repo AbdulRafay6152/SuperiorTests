@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getTest, getAttempt } from '../store';
+import { Test, Attempt } from '../types';
 import { ArrowLeft, Download, Check, X, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePDFReport } from '../utils/pdf';
@@ -8,10 +9,25 @@ import { generatePDFReport } from '../utils/pdf';
 export default function ResultDetail() {
   const { id, attemptId } = useParams();
   const navigate = useNavigate();
-  const test = getTest(id || '');
-  const attempt = getAttempt(attemptId || '');
+  const [test, setTest] = useState<Test | null>(null);
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
 
-  if (!test || !attempt) { navigate('/dashboard'); return null; }
+  useEffect(() => {
+    if (id) setTest(getTest(id));
+    if (attemptId) setAttempt(getAttempt(attemptId));
+  }, [id, attemptId]);
+
+  if (!test || !attempt) {
+    return (
+      <div className="text-center py-12">
+        <p style={{ color: 'var(--text-secondary)' }}>Result not found.</p>
+        <button onClick={() => navigate('/dashboard')} className="mt-4 px-4 py-2 rounded text-sm font-medium border cursor-pointer"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   const handleExportPDF = () => {
     generatePDFReport(test, attempt);
