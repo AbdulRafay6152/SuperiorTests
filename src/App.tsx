@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { getCurrentUser, getTheme } from './firestoreStore';
+import { AuthProvider, useAuth } from './AuthContext';
+import { getTheme } from './firestoreStore';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -15,15 +16,17 @@ import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const user = getCurrentUser();
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+  </div>;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
-export default function App() {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
+function AppRoutes() {
+  // Initialize theme
+  React.useEffect(() => {
     document.documentElement.className = getTheme();
   }, []);
 
@@ -47,5 +50,13 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getTest, updateTest } from '../store';
-import { TestSettings as TestSettingsType, Test } from '../types';
+import { getTest, updateTest } from '../firestoreStore';
+import { Test, TestSettings as TestSettingsType } from '../types';
 import { Save, ArrowLeft } from 'lucide-react';
 
 function getDefaultSettings(): TestSettingsType {
@@ -24,30 +24,39 @@ export default function TestSettingsPage() {
   const [test, setTest] = useState<Test | null>(null);
   const [settings, setSettings] = useState<TestSettingsType>(getDefaultSettings());
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      const loaded = getTest(id);
-      if (loaded) {
-        setTest(loaded);
-        setSettings(loaded.settings);
-      } else {
-        navigate('/dashboard');
+    async function loadTest() {
+      if (id) {
+        const loaded = await getTest(id);
+        if (loaded) {
+          setTest(loaded);
+          setSettings(loaded.settings);
+        } else {
+          navigate('/dashboard');
+        }
       }
+      setLoading(false);
     }
+    loadTest();
   }, [id]);
+
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>;
+  }
 
   if (!test) {
     return (
-      <div className="text-center py-12">
-        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+      <div className="py-12 text-center">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Test not found.</p>
       </div>
     );
   }
 
-  const save = () => {
+  const save = async () => {
     setSaving(true);
-    updateTest({ ...test, settings });
+    await updateTest({ ...test, settings });
     setTimeout(() => { setSaving(false); navigate(`/test/${test.id}/edit`); }, 500);
   };
 
@@ -70,7 +79,6 @@ export default function TestSettingsPage() {
       </h1>
 
       <div className="space-y-4">
-        {/* General */}
         <Section title="General">
           <Field label="Test name">
             <input type="text" value={settings.name} onChange={e => update({ name: e.target.value })}
@@ -91,49 +99,31 @@ export default function TestSettingsPage() {
           </Field>
         </Section>
 
-        {/* Timing & Attempts */}
         <Section title="Timing & Attempts">
           <Field label="Time Limit">
             <div className="flex items-center gap-2">
               <input type="number" value={settings.timeLimitMinutes || ''} onChange={e => update({ timeLimitMinutes: e.target.value ? parseInt(e.target.value) : null })}
-                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                className="w-20 px-2 py-1 rounded border text-xs outline-none"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 min={1} placeholder="∞" />
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>minutes (leave blank for unlimited)</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>minutes (leave blank for unlimited)</span>
             </div>
           </Field>
           <Field label="Attempt Limit">
             <div className="flex items-center gap-2">
               <input type="number" value={settings.attemptLimit || ''} onChange={e => update({ attemptLimit: e.target.value ? parseInt(e.target.value) : null })}
-                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                className="w-20 px-2 py-1 rounded border text-xs outline-none"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 min={1} placeholder="∞" />
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>attempts (leave blank for unlimited)</span>
-            </div>
-          </Field>
-          <Field label="Availability Window">
-            <div className="flex gap-3 flex-wrap">
-              <div>
-                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Start Date</label>
-                <input type="datetime-local" value={settings.startDate || ''} onChange={e => update({ startDate: e.target.value || null })}
-                  className="px-3 py-2 rounded border text-sm outline-none"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
-              </div>
-              <div>
-                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>End Date</label>
-                <input type="datetime-local" value={settings.endDate || ''} onChange={e => update({ endDate: e.target.value || null })}
-                  className="px-3 py-2 rounded border text-sm outline-none"
-                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
-              </div>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>attempts (leave blank for unlimited)</span>
             </div>
           </Field>
         </Section>
 
-        {/* Access Control */}
         <Section title="Access Control">
           <Field label="Access Mode">
             <select value={settings.accessMode} onChange={e => update({ accessMode: e.target.value as TestSettingsType['accessMode'] })}
-              className="px-3 py-2 rounded border text-sm outline-none cursor-pointer"
+              className="px-2.5 py-1.5 rounded border text-xs outline-none cursor-pointer"
               style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}>
               <option value="open">Open — anyone with the link</option>
               <option value="passcode">Passcode protected</option>
@@ -144,7 +134,7 @@ export default function TestSettingsPage() {
           {settings.accessMode === 'passcode' && (
             <Field label="Passcode">
               <input type="text" value={settings.passcode || ''} onChange={e => update({ passcode: e.target.value || null })}
-                className="w-full px-3 py-2 rounded border text-sm outline-none font-mono"
+                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none font-mono"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 placeholder="Enter passcode" />
             </Field>
@@ -153,7 +143,7 @@ export default function TestSettingsPage() {
             <Field label="Allowed Emails (one per line)">
               <textarea value={settings.emailWhitelist.join('\n')} 
                 onChange={e => update({ emailWhitelist: parseList(e.target.value) })}
-                className="w-full px-3 py-2 rounded border text-sm outline-none resize-y font-mono"
+                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 rows={4} placeholder="student@university.edu" />
             </Field>
@@ -162,14 +152,13 @@ export default function TestSettingsPage() {
             <Field label="Allowed Student IDs (one per line)">
               <textarea value={settings.studentIdList.join('\n')}
                 onChange={e => update({ studentIdList: parseList(e.target.value) })}
-                className="w-full px-3 py-2 rounded border text-sm outline-none resize-y font-mono"
+                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 rows={4} placeholder="STU2024001" />
             </Field>
           )}
         </Section>
 
-        {/* Display & Scoring */}
         <Section title="Display & Scoring">
           <Toggle label="Show results immediately after submission" checked={settings.showResults} onChange={v => update({ showResults: v })} />
           <Toggle label="Show correct answers and explanations after submission" checked={settings.showCorrectAnswers} onChange={v => update({ showCorrectAnswers: v })} />
@@ -177,7 +166,7 @@ export default function TestSettingsPage() {
           {settings.negativeMarking && (
             <Field label="Penalty per wrong answer (fraction of points)">
               <input type="number" value={settings.negativeMarkingPenalty} onChange={e => update({ negativeMarkingPenalty: parseFloat(e.target.value) || 0 })}
-                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                className="w-20 px-2 py-1 rounded border text-xs outline-none"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 min={0} max={1} step={0.05} />
             </Field>
@@ -188,7 +177,6 @@ export default function TestSettingsPage() {
           <Toggle label="Shuffle answer options" checked={settings.shuffleOptions} onChange={v => update({ shuffleOptions: v })} />
         </Section>
 
-        {/* Anti-Cheat */}
         <Section title="Anti-Cheat Controls">
           <Toggle label="Tab-switch / window-blur detection" checked={settings.antiCheat.tabSwitchDetection} onChange={v => updateAC({ tabSwitchDetection: v })} />
           <Toggle label="Fullscreen enforcement" checked={settings.antiCheat.fullscreenEnforcement} onChange={v => updateAC({ fullscreenEnforcement: v })} />
@@ -200,18 +188,16 @@ export default function TestSettingsPage() {
           <Toggle label="Resume control (paused attempts require owner approval)" checked={settings.antiCheat.resumeControl} onChange={v => updateAC({ resumeControl: v })} />
         </Section>
 
-        {/* Notifications */}
         <Section title="Notifications">
           <Toggle label="Email me when a new result is submitted" checked={settings.notifyOnSubmit} onChange={v => update({ notifyOnSubmit: v })} />
         </Section>
 
-        {/* Save */}
         <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-          <button onClick={save} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold border-none cursor-pointer"
+          <button onClick={save} className="flex items-center gap-2 px-4 py-2 rounded text-xs font-semibold border-none cursor-pointer"
             style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-            <Save size={14} /> {saving ? 'Saving…' : 'Save Settings'}
+            <Save size={12} /> {saving ? 'Saving…' : 'Save Settings'}
           </button>
-          <Link to={`/test/${test.id}/edit`} className="px-4 py-2 rounded text-sm font-medium no-underline border"
+          <Link to={`/test/${test.id}/edit`} className="px-4 py-2 rounded text-xs font-medium no-underline border"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
             Cancel
           </Link>

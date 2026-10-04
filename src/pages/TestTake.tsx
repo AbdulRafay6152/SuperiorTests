@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getTestBySlug, createAttempt, updateAttempt, submitAttempt } from '../store';
+import { useParams } from 'react-router-dom';
+import { getTestBySlug, createAttempt, updateAttempt, submitAttempt } from '../firestoreStore';
 import { Test, Question, Attempt, Answer, AntiCheatEvent } from '../types';
 import { Clock, Flag, ChevronLeft, ChevronRight, AlertTriangle, Lock } from 'lucide-react';
 import katex from 'katex';
@@ -21,8 +21,8 @@ function renderMath(text: string): string {
 
 export default function TestTake() {
   const { slug } = useParams();
-  const navigate = useNavigate();
-  const test = getTestBySlug(slug || '');
+  const [test, setTest] = useState<Test | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [phase, setPhase] = useState<'gate-access' | 'gate-identity' | 'running' | 'submitted'>('gate-access');
   const [takerName, setTakerName] = useState('');
@@ -40,6 +40,17 @@ export default function TestTake() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
+  useEffect(() => {
+    async function loadTest() {
+      if (slug) {
+        const t = await getTestBySlug(slug);
+        setTest(t);
+      }
+      setLoading(false);
+    }
+    loadTest();
+  }, [slug]);
+
   // Anti-cheat: blur detection
   useEffect(() => {
     if (phase !== 'running' || !test?.settings.antiCheat.tabSwitchDetection) return;
@@ -56,25 +67,11 @@ export default function TestTake() {
     if (phase !== 'running' || !test?.settings.antiCheat.preventRefresh) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = 'Your test is in progress. Are you sure you want to leave?';
+      e.returnValue = 'Your test is in progress.';
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [phase, test?.settings.antiCheat.preventRefresh]);
-
-  // Anti-cheat: fullscreen enforcement
-  useEffect(() => {
-    if (phase !== 'running' || !test?.settings.antiCheat.fullscreenEnforcement) return;
-    const check = () => {
-      if (!document.fullscreenElement) {
-        logEvent('fullscreen-exit', 'Exited fullscreen mode');
-        setPaused(true);
-      }
-    };
-    document.addEventListener('fullscreenchange', check);
-    document.documentElement.requestFullscreen?.().catch(() => {});
-    return () => document.removeEventListener('fullscreenchange', check);
-  }, [phase, test?.settings.antiCheat.fullscreenEnforcement]);
 
   // Timer
   useEffect(() => {
@@ -98,12 +95,36 @@ export default function TestTake() {
     }
   }, [timeLeft, phase]);
 
+  function logEvent(type: AntiCheatEvent['type'], details?: string) {
+    if (!attempt) return;
+    const event: AntiCheatEvent = { id: generateId(), attemptId: attempt.id, type, timestamp: new Date().toISOString(), details };
+    setAntiCheatEvents(prev => [...prev, event]);
+  }
+
+  async function handleSubmit() {
+    if (!attempt) return;
+    const finalAttempt = { ...attempt, answers, antiCheatEvents: [...attempt.antiCheatEvents, ...antiCheatEvents] };
+    await updateAttempt(finalAttempt);
+    const submitted = await submitAttempt(attempt.id);
+    if (submitted) {
+      setAttempt(submitted);
+      setPhase('submitted');
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+  }
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading test…</p>
+    </div>;
+  }
+
   if (!test) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Not Found</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>This test link is invalid or the test has been removed.</p>
+          <h1 className="text-base font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Not Found</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This test link is invalid or the test has been removed.</p>
         </div>
       </div>
     );
@@ -113,9 +134,9 @@ export default function TestTake() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="text-center p-8">
-          <Lock size={32} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Not Available</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>This test has not been published yet.</p>
+          <Lock size={24} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+          <h1 className="text-base font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Not Available</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>This test has not been published yet.</p>
         </div>
       </div>
     );
@@ -126,8 +147,8 @@ export default function TestTake() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Not Yet Open</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>This test becomes available on {new Date(test.settings.startDate).toLocaleString()}.</p>
+          <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Not Yet Open</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Available on {new Date(test.settings.startDate).toLocaleString()}.</p>
         </div>
       </div>
     );
@@ -136,32 +157,13 @@ export default function TestTake() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Has Ended</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>This test is no longer accepting submissions.</p>
+          <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Has Ended</h1>
         </div>
       </div>
     );
   }
 
-  function logEvent(type: AntiCheatEvent['type'], details?: string) {
-    if (!attempt) return;
-    const event: AntiCheatEvent = { id: generateId(), attemptId: attempt.id, type, timestamp: new Date().toISOString(), details };
-    setAntiCheatEvents(prev => [...prev, event]);
-  }
-
-  function handleSubmit() {
-    if (!attempt) return;
-    const finalAttempt = { ...attempt, answers, antiCheatEvents: [...attempt.antiCheatEvents, ...antiCheatEvents] };
-    updateAttempt(finalAttempt);
-    const submitted = submitAttempt(attempt.id);
-    if (submitted) {
-      setAttempt(submitted);
-      setPhase('submitted');
-    }
-    if (timerRef.current) clearInterval(timerRef.current);
-  }
-
-  // Gate Step 1: Access verification based on teacher's settings
+  // Gate Step 1: Access verification
   if (phase === 'gate-access') {
     const needsEmail = test.settings.accessMode === 'whitelist-email' || test.settings.accessMode === 'open';
     const needsStudentId = test.settings.accessMode === 'whitelist-id' || test.settings.accessMode === 'open';
@@ -180,7 +182,7 @@ export default function TestTake() {
             <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{test.settings.description}</p>
           )}
           <div className="text-xs mb-4 p-2.5 rounded border space-y-0.5" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-            <div>{test.questions.length} questions · {test.questions.reduce((s, q) => s + q.points, 0)} points</div>
+            <div>{test.questions.length} questions · {test.questions.reduce((s: number, q: Question) => s + q.points, 0)} points</div>
             {test.settings.timeLimitMinutes && <div>Time limit: {test.settings.timeLimitMinutes} min</div>}
             {test.settings.attemptLimit && <div>Attempts allowed: {test.settings.attemptLimit}</div>}
           </div>
@@ -221,7 +223,7 @@ export default function TestTake() {
                     <input type="password" value={passcode} onChange={e => setPasscode(e.target.value)}
                       className="w-full px-2.5 py-1.5 rounded border text-xs outline-none text-mono"
                       style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                      placeholder="Enter passcode provided by instructor" />
+                      placeholder="Enter passcode" />
                   </div>
                 )}
               </div>
@@ -233,17 +235,13 @@ export default function TestTake() {
                     setGateError('Incorrect passcode.'); return;
                   }
                   if (test.settings.accessMode === 'whitelist-email' && !test.settings.emailWhitelist.includes(takerEmail.toLowerCase())) {
-                    setGateError('This email is not authorized to take this test.'); return;
+                    setGateError('This email is not authorized.'); return;
                   }
                   if (test.settings.accessMode === 'whitelist-id' && !test.settings.studentIdList.includes(takerStudentId)) {
-                    setGateError('This student ID is not authorized to take this test.'); return;
+                    setGateError('This student ID is not authorized.'); return;
                   }
-                  if (needsEmail && !takerEmail.trim()) {
-                    setGateError('Email is required.'); return;
-                  }
-                  if (needsStudentId && !takerStudentId.trim()) {
-                    setGateError('Student ID is required.'); return;
-                  }
+                  if (needsEmail && !takerEmail.trim()) { setGateError('Email is required.'); return; }
+                  if (needsStudentId && !takerStudentId.trim()) { setGateError('Student ID is required.'); return; }
                   setPhase('gate-identity');
                 }}
                 className="w-full mt-4 py-2 rounded text-xs font-semibold border-none cursor-pointer"
@@ -253,12 +251,9 @@ export default function TestTake() {
               </button>
             </>
           ) : (
-            // Open mode with no access fields — skip directly to identity
-            <button
-              onClick={() => setPhase('gate-identity')}
+            <button onClick={() => setPhase('gate-identity')}
               className="w-full py-2 rounded text-xs font-semibold border-none cursor-pointer"
-              style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
-            >
+              style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
               Continue
             </button>
           )}
@@ -267,7 +262,7 @@ export default function TestTake() {
     );
   }
 
-  // Gate Step 2: Collect name and father's name
+  // Gate Step 2: Identity collection
   if (phase === 'gate-identity') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
@@ -276,17 +271,14 @@ export default function TestTake() {
             <h1 className="text-base font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
               {test.settings.name}
             </h1>
-            <button
-              onClick={() => { setPhase('gate-access'); setGateError(''); }}
-              className="text-xs border-none bg-transparent cursor-pointer"
-              style={{ color: 'var(--accent)' }}
-            >
+            <button onClick={() => { setPhase('gate-access'); setGateError(''); }}
+              className="text-xs border-none bg-transparent cursor-pointer" style={{ color: 'var(--accent)' }}>
               ← Back
             </button>
           </div>
 
           <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Enter your details to begin the test. This information will be recorded with your submission.
+            Enter your details to begin the test.
           </p>
 
           {gateError && (
@@ -313,14 +305,14 @@ export default function TestTake() {
           </div>
 
           <button
-            onClick={() => {
+            onClick={async () => {
               setGateError('');
               if (!takerName.trim()) { setGateError('Full name is required.'); return; }
               if (!takerFatherName.trim()) { setGateError("Father's name is required."); return; }
 
-              const newAttempt = createAttempt(test.id, takerName, takerFatherName, takerEmail, takerStudentId);
+              const newAttempt = await createAttempt(test.id, takerName, takerFatherName, takerEmail, takerStudentId);
               setAttempt(newAttempt);
-              setAnswers(test.questions.map(q => ({ questionId: q.id, answer: '', flagged: false, timeSpentSeconds: 0 })));
+              setAnswers(test.questions.map((q: Question) => ({ questionId: q.id, answer: '', flagged: false, timeSpentSeconds: 0 })));
               setTimeLeft(test.settings.timeLimitMinutes ? test.settings.timeLimitMinutes * 60 : null);
               setPhase('running');
             }}
@@ -334,20 +326,20 @@ export default function TestTake() {
     );
   }
 
-  // Submitted
+  // Submitted view
   if (phase === 'submitted' && attempt) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="text-center max-w-md">
-          <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--success)' + '20' }}>
-            <span className="text-2xl" style={{ color: 'var(--success)' }}>✓</span>
+        <div className="text-center max-w-sm">
+          <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'var(--success)' + '20' }}>
+            <span className="text-xl" style={{ color: 'var(--success)' }}>✓</span>
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>Test Submitted</h1>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
+          <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Submitted</h1>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
           {test.settings.showResults && attempt.score !== null && (
-            <div className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <div className="text-3xl font-bold mb-1" style={{ color: 'var(--text)' }}>{attempt.percentage}%</div>
-              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{attempt.score} / {attempt.maxScore} points</div>
+            <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text)' }}>{attempt.percentage}%</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{attempt.score} / {attempt.maxScore} points</div>
             </div>
           )}
         </div>
@@ -358,8 +350,7 @@ export default function TestTake() {
   // Running phase
   const questions = test.questions;
   const currentQ = questions[currentPage];
-  const answeredCount = answers.filter(a => a.answer !== '' && a.answer !== null).length;
-
+  const answeredCount = answers.filter((a: Answer) => a.answer !== '' && a.answer !== null).length;
   const acSettings = test.settings.antiCheat;
 
   return (
@@ -368,21 +359,18 @@ export default function TestTake() {
       onPaste={acSettings.disableCopyPaste ? (e) => { e.preventDefault(); logEvent('paste-attempt'); } : undefined}
       onContextMenu={acSettings.disableRightClick ? (e) => { e.preventDefault(); logEvent('right-click'); } : undefined}
     >
-      {/* Watermark */}
       {acSettings.watermark && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center opacity-[0.04]" style={{ userSelect: 'none' }}>
-          <div className="text-6xl font-bold rotate-[-30deg] whitespace-nowrap" style={{ color: 'var(--text)' }}>
+          <div className="text-4xl font-bold rotate-[-30deg] whitespace-nowrap" style={{ color: 'var(--text)' }}>
             {takerName} — {takerStudentId}
           </div>
         </div>
       )}
 
-      {/* Disable text selection */}
       {acSettings.disableTextSelection && (
         <style>{`.test-content * { user-select: none !important; }`}</style>
       )}
 
-      {/* Header - compact and professional */}
       <header className="border-b sticky top-0 z-40" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-5xl mx-auto px-4 h-10 flex items-center justify-between">
           <span className="font-semibold text-xs truncate" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
@@ -397,17 +385,16 @@ export default function TestTake() {
         </div>
       </header>
 
-      {/* Pause overlay */}
       {paused && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <div className="text-center p-8 rounded max-w-sm mx-4" style={{ backgroundColor: 'var(--surface)' }}>
-            <AlertTriangle size={32} className="mx-auto mb-3" style={{ color: 'var(--warning)' }} />
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>Test Paused</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-              Suspicious activity was detected. Your test has been paused.
+          <div className="text-center p-6 rounded max-w-sm mx-4" style={{ backgroundColor: 'var(--surface)' }}>
+            <AlertTriangle size={24} className="mx-auto mb-3" style={{ color: 'var(--warning)' }} />
+            <h2 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Paused</h2>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Suspicious activity detected. Your test has been paused.
             </p>
             <button onClick={() => setPaused(false)}
-              className="px-6 py-2 rounded text-sm font-semibold border-none cursor-pointer"
+              className="px-4 py-2 rounded text-xs font-semibold border-none cursor-pointer"
               style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
               Resume
             </button>
@@ -415,45 +402,37 @@ export default function TestTake() {
         </div>
       )}
 
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex gap-6">
-        {/* Question Navigator */}
-        <div className="hidden lg:block w-48 shrink-0">
-          <div className="sticky top-16">
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-4 flex gap-4">
+        <div className="hidden lg:block w-40 shrink-0">
+          <div className="sticky top-14">
             <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Questions</p>
-            <div className="grid grid-cols-5 gap-1.5">
-              {questions.map((_, idx) => {
+            <div className="grid grid-cols-5 gap-1">
+              {questions.map((_: Question, idx: number) => {
                 const isAnswered = answers[idx]?.answer !== '' && answers[idx]?.answer !== null;
                 const isFlagged = flagged.has(idx);
                 const isCurrent = idx === currentPage;
                 return (
                   <button key={idx} onClick={() => setCurrentPage(idx)}
-                    className="relative w-8 h-8 rounded text-xs font-medium border cursor-pointer flex items-center justify-center"
+                    className="relative w-7 h-7 rounded text-xs font-medium border cursor-pointer flex items-center justify-center"
                     style={{
                       backgroundColor: isCurrent ? 'var(--primary)' : isAnswered ? 'var(--accent)' + '30' : 'var(--surface)',
                       borderColor: isCurrent ? 'var(--primary)' : isFlagged ? 'var(--warning)' : 'var(--border)',
                       color: isCurrent ? '#fff' : 'var(--text)',
                     }}>
                     {idx + 1}
-                    {isFlagged && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--warning)' }} />}
                   </button>
                 );
               })}
             </div>
-            <div className="mt-4 space-y-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'var(--primary)' }} /> Current</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'var(--accent)' + '30' }} /> Answered</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded border" style={{ borderColor: 'var(--warning)' }} /> Flagged</div>
-            </div>
           </div>
         </div>
 
-        {/* Question Area */}
         <div className="flex-1 test-content">
           {currentQ && (
             <QuestionRenderer
               question={currentQ}
               answer={answers[currentPage]?.answer || ''}
-              onChange={(answer) => {
+              onChange={(answer: any) => {
                 const newAnswers = [...answers];
                 newAnswers[currentPage] = { ...newAnswers[currentPage], answer };
                 setAnswers(newAnswers);
@@ -462,14 +441,13 @@ export default function TestTake() {
             />
           )}
 
-          {/* Mobile question nav */}
-          <div className="lg:hidden mt-4 flex flex-wrap gap-1.5">
-            {questions.map((_, idx) => {
+          <div className="lg:hidden mt-3 flex flex-wrap gap-1">
+            {questions.map((_: Question, idx: number) => {
               const isAnswered = answers[idx]?.answer !== '' && answers[idx]?.answer !== null;
               const isCurrent = idx === currentPage;
               return (
                 <button key={idx} onClick={() => setCurrentPage(idx)}
-                  className="w-7 h-7 rounded text-xs font-medium border cursor-pointer"
+                  className="w-6 h-6 rounded text-xs font-medium border cursor-pointer"
                   style={{
                     backgroundColor: isCurrent ? 'var(--primary)' : isAnswered ? 'var(--accent)' + '30' : 'var(--surface)',
                     borderColor: isCurrent ? 'var(--primary)' : 'var(--border)',
@@ -481,12 +459,11 @@ export default function TestTake() {
             })}
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
             <button onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}
-              className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium border cursor-pointer disabled:opacity-30"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border cursor-pointer disabled:opacity-30"
               style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-              <ChevronLeft size={14} /> Previous
+              <ChevronLeft size={12} /> Previous
             </button>
             <div className="flex items-center gap-2">
               <button onClick={() => {
@@ -495,19 +472,19 @@ export default function TestTake() {
                 else newFlagged.add(currentPage);
                 setFlagged(newFlagged);
               }}
-                className="px-3 py-2 rounded text-sm border cursor-pointer flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded text-xs border cursor-pointer flex items-center gap-1"
                 style={{ borderColor: flagged.has(currentPage) ? 'var(--warning)' : 'var(--border)', backgroundColor: 'var(--surface)', color: flagged.has(currentPage) ? 'var(--warning)' : 'var(--text-muted)' }}>
-                <Flag size={14} /> {flagged.has(currentPage) ? 'Flagged' : 'Flag'}
+                <Flag size={12} /> {flagged.has(currentPage) ? 'Flagged' : 'Flag'}
               </button>
               {currentPage < questions.length - 1 ? (
                 <button onClick={() => setCurrentPage(currentPage + 1)}
-                  className="flex items-center gap-1 px-3 py-2 rounded text-sm font-medium border-none cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border-none cursor-pointer"
                   style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-                  Next <ChevronRight size={14} />
+                  Next <ChevronRight size={12} />
                 </button>
               ) : (
                 <button onClick={handleSubmit}
-                  className="px-4 py-2 rounded text-sm font-semibold border-none cursor-pointer"
+                  className="px-3 py-1.5 rounded text-xs font-semibold border-none cursor-pointer"
                   style={{ backgroundColor: 'var(--success)', color: '#fff' }}>
                   Submit Test
                 </button>
@@ -527,9 +504,9 @@ function TimerDisplay({ seconds }: { seconds: number }) {
   const isCritical = seconds < 30;
 
   return (
-    <div className="flex items-center gap-1.5 text-sm font-mono font-medium"
+    <div className="flex items-center gap-1 text-xs font-mono font-medium"
       style={{ color: isCritical ? 'var(--error)' : isWarning ? 'var(--warning)' : 'var(--text-secondary)' }}>
-      <Clock size={14} />
+      <Clock size={12} />
       {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
     </div>
   );
@@ -546,40 +523,40 @@ function QuestionRenderer({ question, answer, onChange, shuffleOptions }: {
     : question.options || [];
 
   return (
-    <div className="p-5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="flex items-center justify-between mb-3">
+    <div className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
           {question.points} pt{question.points !== 1 ? 's' : ''}
         </span>
       </div>
-      <div className="text-base mb-4" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(question.text) }} />
+      <div className="text-sm mb-3" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(question.text) }} />
 
       {(question.type === 'multiple-choice-single' || question.type === 'true-false') && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {options.map(opt => (
-            <label key={opt.id} className="flex items-center gap-3 p-2.5 rounded border cursor-pointer transition-colors"
+            <label key={opt.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer"
               style={{ borderColor: answer === opt.text ? 'var(--accent)' : 'var(--border)', backgroundColor: answer === opt.text ? 'var(--accent)' + '10' : 'transparent' }}>
               <input type="radio" name={question.id} checked={answer === opt.text} onChange={() => onChange(opt.text)} className="cursor-pointer" />
-              <span className="text-sm" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
+              <span className="text-xs" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
             </label>
           ))}
         </div>
       )}
 
       {question.type === 'multiple-choice-multi' && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {options.map(opt => {
             const selected = Array.isArray(answer) ? answer.includes(opt.text) : false;
             return (
-              <label key={opt.id} className="flex items-center gap-3 p-2.5 rounded border cursor-pointer transition-colors"
+              <label key={opt.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer"
                 style={{ borderColor: selected ? 'var(--accent)' : 'var(--border)', backgroundColor: selected ? 'var(--accent)' + '10' : 'transparent' }}>
                 <input type="checkbox" checked={selected}
                   onChange={() => {
                     const arr = Array.isArray(answer) ? [...answer] : [];
-                    if (selected) onChange(arr.filter(a => a !== opt.text));
+                    if (selected) onChange(arr.filter((a: string) => a !== opt.text));
                     else onChange([...arr, opt.text]);
                   }} className="cursor-pointer" />
-                <span className="text-sm" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
+                <span className="text-xs" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
               </label>
             );
           })}
@@ -588,7 +565,7 @@ function QuestionRenderer({ question, answer, onChange, shuffleOptions }: {
 
       {(question.type === 'fill-blank' || question.type === 'short-answer') && (
         <input type="text" value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-          className="w-full px-3 py-2 rounded border text-sm outline-none"
+          className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
           placeholder="Type your answer..." />
       )}
@@ -596,35 +573,35 @@ function QuestionRenderer({ question, answer, onChange, shuffleOptions }: {
       {question.type === 'numeric' && (
         <div>
           <input type="number" value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-            className="w-48 px-3 py-2 rounded border text-sm outline-none"
+            className="w-40 px-2.5 py-1.5 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
             placeholder="Enter a number" step="any" />
           {question.numericTolerance !== undefined && question.numericTolerance > 0 && (
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>±{question.numericTolerance} tolerance accepted</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>±{question.numericTolerance} tolerance</p>
           )}
         </div>
       )}
 
       {question.type === 'essay' && (
         <textarea value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-          className="w-full px-3 py-2 rounded border text-sm outline-none resize-y"
+          className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-          rows={8} placeholder="Write your response..." />
+          rows={6} placeholder="Write your response..." />
       )}
 
       {question.type === 'matching' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {(question.matchingPairs || []).map(pair => (
-            <div key={pair.id} className="flex items-center gap-3">
-              <span className="text-sm font-medium w-32 shrink-0" style={{ color: 'var(--text)' }}>{pair.left}</span>
-              <span style={{ color: 'var(--text-muted)' }}>→</span>
+            <div key={pair.id} className="flex items-center gap-2">
+              <span className="text-xs font-medium w-24 shrink-0" style={{ color: 'var(--text)' }}>{pair.left}</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→</span>
               <select
                 value={(answer as Record<string, string>)?.[pair.id] || ''}
                 onChange={e => {
                   const obj = { ...(answer as Record<string, string> || {}), [pair.id]: e.target.value };
                   onChange(obj);
                 }}
-                className="flex-1 px-3 py-2 rounded border text-sm outline-none cursor-pointer"
+                className="flex-1 px-2 py-1 rounded border text-xs outline-none cursor-pointer"
                 style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}>
                 <option value="">Select...</option>
                 {(question.matchingPairs || []).map(p => (

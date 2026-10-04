@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getCurrentUser, getTest, createTest, updateTest, publishTest } from '../store';
+import { useAuth } from '../AuthContext';
+import { getTest, createTest, updateTest, publishTest } from '../firestoreStore';
 import { Test, Question, QuestionType, QuestionOption, MatchingPair } from '../types';
-import { Plus, Trash2, GripVertical, Settings, Eye, ChevronDown, Import } from 'lucide-react';
+import { Plus, Trash2, Settings, Eye, Import } from 'lucide-react';
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
@@ -22,43 +23,51 @@ const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
 export default function TestEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const { user } = useAuth();
   const [test, setTest] = useState<Test | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkText, setBulkText] = useState('');
   const [bulkPreview, setBulkPreview] = useState<Partial<Question>[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) { navigate('/login'); return; }
-    if (!id) {
-      const newTest = createTest(user.id, 'Untitled Test');
-      navigate(`/test/${newTest.id}/edit`, { replace: true });
-    } else {
-      const loadedTest = getTest(id);
-      if (loadedTest) {
-        setTest(loadedTest);
-      } else {
-        navigate('/dashboard');
+    async function loadTest() {
+      if (!user) {
+        navigate('/login');
+        return;
       }
+      if (!id) {
+        const newTest = await createTest('Untitled Test');
+        navigate(`/test/${newTest.id}/edit`, { replace: true });
+      } else {
+        const loadedTest = await getTest(id);
+        if (loadedTest) {
+          setTest(loadedTest);
+        } else {
+          navigate('/dashboard');
+        }
+      }
+      setLoading(false);
     }
+    loadTest();
   }, [id, user]);
 
-  if (!test || !user) return null;
+  if (loading || !test || !user) return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>;
 
-  const save = () => {
+  const save = async () => {
     setSaving(true);
-    updateTest(test);
+    await updateTest(test);
     setTimeout(() => setSaving(false), 500);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (test.questions.length === 0) {
       alert('Add at least one question before publishing.');
       return;
     }
-    updateTest(test);
-    publishTest(test.id);
+    await updateTest(test);
+    await publishTest(test.id);
     navigate('/dashboard');
   };
 
@@ -91,7 +100,6 @@ export default function TestEditor() {
   };
 
   const removeQuestion = (idx: number) => {
-    if (!test) return;
     const questions = test.questions.filter((_: Question, i: number) => i !== idx).map((q: Question, i: number) => ({ ...q, order: i }));
     setTest({ ...test, questions });
   };
@@ -115,7 +123,6 @@ export default function TestEditor() {
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      // Match numbered question: "1. What is..." or "1) What is..."
       const qMatch = trimmed.match(/^(\d+)[\.\)]\s*(.+)/);
       if (qMatch) {
         if (current) {
@@ -127,26 +134,22 @@ export default function TestEditor() {
         continue;
       }
 
-      // Match options: "A. text" or "A) text" or "* text" (correct)
       const optMatch = trimmed.match(/^([A-Ea-e])[\.\)]\s*(.+)/);
       if (optMatch && current) {
-        const isCorrect = trimmed.startsWith('*') || trimmed.endsWith('*');
         options.push({
           id: generateId(),
-          text: optMatch[2].replace(/\*$/, '').replace(/^\*/, '').trim(),
+          text: optMatch[2].trim(),
           isCorrect: false,
         });
         continue;
       }
 
-      // Match answer line
       const ansMatch = trimmed.match(/^(?:Answer|Correct|Ans)[\.:]\s*(.+)/i);
       if (ansMatch && current) {
         const ans = ansMatch[1].trim();
         if (current.type === 'fill-blank' || current.type === 'short-answer') {
           current.correctAnswer = ans;
         } else if (options.length > 0) {
-          // Mark matching option as correct
           const optIdx = ans.toUpperCase().charCodeAt(0) - 65;
           if (optIdx >= 0 && optIdx < options.length) {
             options[optIdx].isCorrect = true;
@@ -181,12 +184,11 @@ export default function TestEditor() {
     setBulkPreview([]);
   };
 
-  const totalPoints = test?.questions.reduce((sum: number, q: Question) => sum + q.points, 0) || 0;
+  const totalPoints = test.questions.reduce((sum: number, q: Question) => sum + q.points, 0);
 
   return (
     <div>
-      {/* Header - Testmoz-style compact */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between mb-3 pb-3 border-b flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
           <Link to="/dashboard" className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>
             ← Tests
@@ -228,24 +230,23 @@ export default function TestEditor() {
         </div>
       </div>
 
-      {/* Bulk Import */}
       {showBulkImport && (
-        <div className="mb-6 p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <h3 className="font-semibold mb-2" style={{ color: 'var(--text)' }}>Bulk Import</h3>
-          <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-            Paste questions in this format: numbered questions, A/B/C/D options, "Answer:" lines.
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--text)' }}>Bulk Import</h3>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+            Paste questions: numbered questions, A/B/C/D options, "Answer:" lines.
           </p>
           <textarea
             value={bulkText}
             onChange={e => { setBulkText(e.target.value); setBulkPreview([]); }}
-            className="w-full h-40 p-3 rounded border text-sm font-mono resize-y outline-none"
+            className="w-full h-32 p-2 rounded border text-xs font-mono resize-y outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            placeholder={`1. What is the capital of France?\nA. London\nB. Paris\nC. Berlin\nD. Madrid\nAnswer: B\n\n2. What is 2 + 2?\nAnswer: 4`}
+            placeholder={`1. What is the capital of France?\nA. London\nB. Paris\nC. Berlin\nD. Madrid\nAnswer: B`}
           />
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-2">
             <button
               onClick={parseBulkText}
-              className="px-3 py-1.5 rounded text-sm font-medium border cursor-pointer"
+              className="px-2.5 py-1 rounded text-xs font-medium border cursor-pointer"
               style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}
             >
               Preview
@@ -253,7 +254,7 @@ export default function TestEditor() {
             {bulkPreview.length > 0 && (
               <button
                 onClick={importBulk}
-                className="px-3 py-1.5 rounded text-sm font-semibold border-none cursor-pointer"
+                className="px-2.5 py-1 rounded text-xs font-semibold border-none cursor-pointer"
                 style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
               >
                 Import {bulkPreview.length} Questions
@@ -261,34 +262,17 @@ export default function TestEditor() {
             )}
             <button
               onClick={() => { setShowBulkImport(false); setBulkText(''); setBulkPreview([]); }}
-              className="px-3 py-1.5 rounded text-sm border-none cursor-pointer"
+              className="px-2.5 py-1 rounded text-xs border-none cursor-pointer"
               style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
             >
               Cancel
             </button>
           </div>
-          {bulkPreview.length > 0 && (
-            <div className="mt-3 p-3 rounded border" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Preview:</p>
-              {bulkPreview.map((q, i) => (
-                <div key={i} className="mb-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <span style={{ color: 'var(--text)' }}>{i + 1}. {q.text}</span>
-                  {q.options && q.options.map((o, j) => (
-                    <div key={j} className="ml-4" style={{ color: o.isCorrect ? 'var(--success)' : 'var(--text-muted)' }}>
-                      {String.fromCharCode(65 + j)}. {o.text} {o.isCorrect && '✓'}
-                    </div>
-                  ))}
-                  {q.correctAnswer && <div className="ml-4" style={{ color: 'var(--success)' }}>Answer: {q.correctAnswer}</div>}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
-      {/* Questions */}
-      <div className="space-y-4">
-        {test!.questions.map((q: Question, idx: number) => (
+      <div className="space-y-3">
+        {test.questions.map((q: Question, idx: number) => (
           <QuestionCard
             key={q.id}
             question={q}
@@ -301,7 +285,6 @@ export default function TestEditor() {
         ))}
       </div>
 
-      {/* Add Question */}
       <div className="mt-4 flex flex-wrap gap-1.5">
         <button
           onClick={() => addQuestion('multiple-choice-single')}
@@ -355,7 +338,6 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
         </div>
       </div>
 
-      {/* Question Text */}
       <textarea
         value={question.text}
         onChange={e => onUpdate({ text: e.target.value })}
@@ -365,7 +347,6 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
         rows={2}
       />
 
-      {/* Points */}
       <div className="flex items-center gap-2 mb-2">
         <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Points:</label>
         <input
@@ -378,12 +359,11 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
         />
       </div>
 
-      {/* Type-specific fields */}
       {(question.type === 'multiple-choice-single' || question.type === 'multiple-choice-multi' || question.type === 'true-false') && (
         <OptionsEditor question={question} onUpdate={onUpdate} />
       )}
 
-      {question.type === 'fill-blank' || question.type === 'short-answer' ? (
+      {(question.type === 'fill-blank' || question.type === 'short-answer') && (
         <div>
           <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Correct answer</label>
           <input
@@ -395,7 +375,7 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
             placeholder="Correct answer..."
           />
         </div>
-      ) : null}
+      )}
 
       {question.type === 'numeric' && (
         <div className="space-y-1.5">
@@ -429,7 +409,6 @@ function QuestionCard({ question, index, total, onUpdate, onRemove, onMove }: {
         <MatchingEditor question={question} onUpdate={onUpdate} />
       )}
 
-      {/* Explanation */}
       <div className="mt-2">
         <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>Explanation (optional)</label>
         <textarea

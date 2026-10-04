@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCurrentUser, getTheme, toggleTheme } from '../store';
+import { useAuth } from '../AuthContext';
+import { getTheme, toggleTheme } from '../firestoreStore';
 import { Sun, Moon, ClipboardList } from 'lucide-react';
 
 export default function Landing() {
-  const user = getCurrentUser();
+  const { user } = useAuth();
   const theme = getTheme();
 
   useEffect(() => {
@@ -13,7 +14,6 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}>
-      {/* Header - minimal and professional */}
       <header className="border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
         <div className="max-w-6xl mx-auto px-6 h-12 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -29,7 +29,6 @@ export default function Landing() {
               onClick={toggleTheme}
               className="p-1.5 rounded border-none cursor-pointer"
               style={{ backgroundColor: 'transparent', color: 'var(--text-muted)' }}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
             </button>
@@ -63,7 +62,6 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero - clean and direct */}
       <div className="flex-1 flex items-center">
         <div className="max-w-6xl mx-auto px-6 py-16 w-full">
           <div className="max-w-xl">
@@ -97,45 +95,21 @@ export default function Landing() {
             )}
           </div>
 
-          {/* Feature list - dense and utilitarian */}
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-            <FeatureItem
-              title="8 question types"
-              description="Multiple choice, true/false, fill-blank, short answer, essay, numeric, matching, multi-select."
-            />
-            <FeatureItem
-              title="Anti-cheat controls"
-              description="Tab detection, fullscreen enforcement, copy blocking, watermarking, audit trails."
-            />
-            <FeatureItem
-              title="Flexible access"
-              description="Open links, passcodes, email whitelists, or student ID verification."
-            />
-            <FeatureItem
-              title="Time limits & attempts"
-              description="Set availability windows, time limits, attempt restrictions, and auto-submit."
-            />
-            <FeatureItem
-              title="Detailed reports"
-              description="Per-student breakdowns, question analytics, pass rates, PDF and CSV export."
-            />
-            <FeatureItem
-              title="Bulk import"
-              description="Paste formatted text to auto-parse questions. Preview before importing."
-            />
+            <FeatureItem title="8 question types" description="Multiple choice, true/false, fill-blank, short answer, essay, numeric, matching, multi-select." />
+            <FeatureItem title="Anti-cheat controls" description="Tab detection, fullscreen enforcement, copy blocking, watermarking, audit trails." />
+            <FeatureItem title="Flexible access" description="Open links, passcodes, email whitelists, or student ID verification." />
+            <FeatureItem title="Time limits & attempts" description="Set availability windows, time limits, attempt restrictions, and auto-submit." />
+            <FeatureItem title="Detailed reports" description="Per-student breakdowns, question analytics, pass rates, PDF and CSV export." />
+            <FeatureItem title="Bulk import" description="Paste formatted text to auto-parse questions. Preview before importing." />
           </div>
         </div>
       </div>
 
-      {/* Footer - minimal */}
       <footer className="border-t py-4" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            SuperiorTests
-          </span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            For colleges and universities
-          </span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>SuperiorTests</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>For colleges and universities</span>
         </div>
       </footer>
     </div>
@@ -145,12 +119,8 @@ export default function Landing() {
 function FeatureItem({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold mb-1 tracking-tight" style={{ color: 'var(--text)' }}>
-        {title}
-      </h3>
-      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-        {description}
-      </p>
+      <h3 className="text-xs font-semibold mb-1 tracking-tight" style={{ color: 'var(--text)' }}>{title}</h3>
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{description}</p>
     </div>
   );
 }

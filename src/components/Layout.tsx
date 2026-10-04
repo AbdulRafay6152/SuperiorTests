@@ -1,22 +1,22 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { getCurrentUser, logout, toggleTheme, getTheme } from '../store';
+import { useAuth } from '../AuthContext';
+import { logout, getTheme, toggleTheme } from '../firestoreStore';
 import { Sun, Moon, LogOut, ClipboardList } from 'lucide-react';
 
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = getCurrentUser();
+  const { user } = useAuth();
   const theme = getTheme();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}>
-      {/* Header - Testmoz-style minimal */}
       <header 
         className="border-b sticky top-0 z-50"
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
@@ -73,12 +73,10 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-5">
         <Outlet />
       </main>
 
-      {/* Footer */}
       <footer className="border-t py-3 mt-auto" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>

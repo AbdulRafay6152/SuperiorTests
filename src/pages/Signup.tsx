@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signup, getTheme, toggleTheme } from '../store';
+import { signup, getTheme, toggleTheme } from '../firestoreStore';
 import { Sun, Moon, ClipboardList } from 'lucide-react';
 
 export default function Signup() {
@@ -13,11 +13,7 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.className = theme;
-  }, [theme]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -27,13 +23,17 @@ export default function Signup() {
     }
 
     setLoading(true);
-    const result = signup(email, name, password);
-    setLoading(false);
-
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.error || 'Signup failed.');
+    try {
+      const result = await signup(email, name, password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'Signup failed.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Signup failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,7 +63,7 @@ export default function Signup() {
         </h1>
 
         {error && (
-          <div className="my-3 px-3 py-2 text-xs rounded border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+          <div className="my-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
             {error}
           </div>
         )}

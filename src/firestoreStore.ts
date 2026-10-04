@@ -271,15 +271,16 @@ export async function getTestBySlug(slug: string): Promise<Test | null> {
   }
 }
 
-export async function getUserTests(): Promise<Test[]> {
-  if (!currentUser) {
+export async function getUserTests(userId?: string): Promise<Test[]> {
+  const uid = userId || currentUser?.id;
+  if (!uid) {
     return [];
   }
   
   try {
     const q = query(
       collection(db, 'tests'),
-      where('ownerId', '==', currentUser.id),
+      where('ownerId', '==', uid),
       orderBy('updatedAt', 'desc')
     );
     

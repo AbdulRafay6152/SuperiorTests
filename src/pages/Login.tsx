@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login, getTheme, toggleTheme } from '../store';
+import { login } from '../firestoreStore';
 import { Sun, Moon, ClipboardList } from 'lucide-react';
+import { getTheme, toggleTheme } from '../firestoreStore';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,22 +12,22 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.className = theme;
-  }, [theme]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     
-    const result = login(email, password);
-    setLoading(false);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.error || 'Login failed.');
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'Login failed.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,7 +57,7 @@ export default function Login() {
         </h1>
 
         {error && (
-          <div className="my-3 px-3 py-2 text-xs rounded border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+          <div className="my-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
             {error}
           </div>
         )}

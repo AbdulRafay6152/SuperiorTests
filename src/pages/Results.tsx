@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTest, getTestAttempts, getTestStats } from '../store';
-import { Attempt } from '../types';
+import { getTest, getTestAttempts, getTestStats } from '../firestoreStore';
+import { Test, Attempt } from '../types';
 import { Download, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePDFReport, generateBulkPDFReport, exportCSV } from '../utils/pdf';
@@ -9,11 +9,31 @@ import { generatePDFReport, generateBulkPDFReport, exportCSV } from '../utils/pd
 export default function Results() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [test, setTest] = useState<Test | null>(null);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'name' | 'score' | 'date'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const test = getTest(id || '');
+  useEffect(() => {
+    async function loadData() {
+      if (id) {
+        const t = await getTest(id);
+        if (t) {
+          setTest(t);
+          const a = await getTestAttempts(id);
+          setAttempts(a.filter(x => x.status === 'submitted'));
+        }
+      }
+      setLoading(false);
+    }
+    loadData();
+  }, [id]);
+
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading results…</div>;
+  }
 
   if (!test) {
     return (
@@ -27,20 +47,19 @@ export default function Results() {
     );
   }
 
-  const attempts = getTestAttempts(test.id).filter(a => a.status === 'submitted');
-  const stats = getTestStats(test.id);
+  const stats = getTestStats(test.id, attempts);
 
   const filtered = useMemo(() => {
     let result = [...attempts];
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(a =>
+      result = result.filter((a: Attempt) =>
         a.takerName.toLowerCase().includes(s) ||
         a.takerEmail.toLowerCase().includes(s) ||
         a.takerStudentId.toLowerCase().includes(s)
       );
     }
-    result.sort((a, b) => {
+    result.sort((a: Attempt, b: Attempt) => {
       let cmp = 0;
       if (sortField === 'name') cmp = a.takerName.localeCompare(b.takerName);
       else if (sortField === 'score') cmp = (a.percentage || 0) - (b.percentage || 0);
@@ -55,17 +74,16 @@ export default function Results() {
     else { setSortField(field); setSortDir('desc'); }
   };
 
-  // Per-question stats
   const questionStats = useMemo(() => {
-    return test.questions.map(q => {
+    return test.questions.map((q: any) => {
       let correct = 0;
       let total = 0;
       for (const attempt of attempts) {
-        const ans = attempt.answers.find(a => a.questionId === q.id);
+        const ans = attempt.answers.find((a: any) => a.questionId === q.id);
         if (!ans) continue;
         total++;
         if (q.type === 'multiple-choice-single' || q.type === 'true-false') {
-          if (q.options?.some(o => o.isCorrect && o.text === ans.answer)) correct++;
+          if (q.options?.some((o: any) => o.isCorrect && o.text === ans.answer)) correct++;
         } else if (q.type === 'fill-blank' || q.type === 'short-answer') {
           if ((ans.answer as string)?.toLowerCase().trim() === (q.correctAnswer || '').toLowerCase().trim()) correct++;
         }
@@ -76,7 +94,6 @@ export default function Results() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
         <div>
           <Link to="/dashboard" className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>← Tests</Link>
@@ -100,7 +117,6 @@ export default function Results() {
         </div>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div className="grid grid-cols-5 gap-2 mb-4">
           <StatBox label="Submissions" value={stats.totalAttempts.toString()} />
@@ -111,14 +127,13 @@ export default function Results() {
         </div>
       )}
 
-      {/* Question correctness */}
-      {questionStats.some(q => q.total > 0) && (
+      {questionStats.some((q: any) => q.total > 0) && (
         <div className="mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Question correctness
           </p>
           <div className="space-y-1">
-            {questionStats.filter(q => q.total > 0).map((q, i) => (
+            {questionStats.filter((q: any) => q.total > 0).map((q: any, i: number) => (
               <div key={q.questionId} className="flex items-center gap-2">
                 <span className="text-xs w-5 text-mono" style={{ color: 'var(--text-muted)' }}>Q{i + 1}</span>
                 <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{q.text}…</span>
@@ -132,7 +147,6 @@ export default function Results() {
         </div>
       )}
 
-      {/* Search */}
       <div className="mb-3">
         <div className="relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
@@ -143,7 +157,6 @@ export default function Results() {
         </div>
       </div>
 
-      {/* Results Table */}
       {filtered.length === 0 ? (
         <div className="py-12 text-center rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -164,16 +177,12 @@ export default function Results() {
                   Score {sortField === 'score' && (sortDir === 'asc' ? '↑' : '↓')}
                 </th>
                 <th className="text-left px-3 py-2 text-xs font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Time</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold cursor-pointer hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}
-                  onClick={() => toggleSort('date')}>
-                  Submitted {sortField === 'date' && (sortDir === 'asc' ? '↑' : '↓')}
-                </th>
                 <th className="text-left px-3 py-2 text-xs font-semibold hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Flags</th>
                 <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(attempt => (
+              {filtered.map((attempt: Attempt) => (
                 <tr key={attempt.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
                   <td className="px-3 py-2">
                     <div className="text-xs font-medium" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
@@ -194,9 +203,6 @@ export default function Results() {
                   </td>
                   <td className="px-3 py-2 hidden md:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {attempt.timeTakenSeconds ? formatDuration(attempt.timeTakenSeconds) : '—'}
-                  </td>
-                  <td className="px-3 py-2 hidden lg:table-cell text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {attempt.submittedAt ? format(new Date(attempt.submittedAt), 'MMM d, h:mm a') : '—'}
                   </td>
                   <td className="px-3 py-2 hidden lg:table-cell">
                     {attempt.antiCheatEvents.length > 0 ? (

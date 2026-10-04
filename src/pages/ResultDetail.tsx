@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTest, getAttempt } from '../store';
+import { getTest, getAttempt } from '../firestoreStore';
 import { Test, Attempt } from '../types';
 import { ArrowLeft, Download, Check, X, Minus } from 'lucide-react';
 import { format } from 'date-fns';
@@ -11,17 +11,32 @@ export default function ResultDetail() {
   const navigate = useNavigate();
   const [test, setTest] = useState<Test | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) setTest(getTest(id));
-    if (attemptId) setAttempt(getAttempt(attemptId));
+    async function loadData() {
+      if (id) {
+        const t = await getTest(id);
+        setTest(t);
+      }
+      if (attemptId) {
+        const a = await getAttempt(attemptId);
+        setAttempt(a);
+      }
+      setLoading(false);
+    }
+    loadData();
   }, [id, attemptId]);
+
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading result…</div>;
+  }
 
   if (!test || !attempt) {
     return (
-      <div className="text-center py-12">
-        <p style={{ color: 'var(--text-secondary)' }}>Result not found.</p>
-        <button onClick={() => navigate('/dashboard')} className="mt-4 px-4 py-2 rounded text-sm font-medium border cursor-pointer"
+      <div className="py-12 text-center">
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Result not found.</p>
+        <button onClick={() => navigate('/dashboard')} className="mt-3 px-3 py-1.5 text-xs font-medium border cursor-pointer rounded"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
           Back to Dashboard
         </button>
@@ -35,61 +50,59 @@ export default function ResultDetail() {
 
   return (
     <div className="max-w-4xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to={`/test/${test.id}/results`} className="no-underline" style={{ color: 'var(--accent)' }}>
-          <ArrowLeft size={16} className="inline" /> Back to Results
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
+        <Link to={`/test/${test.id}/results`} className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>
+          ← Back to Results
         </Link>
       </div>
 
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+          <h1 className="text-base font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
             {attempt.takerName}
           </h1>
           {attempt.takerFatherName && (
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               S/O {attempt.takerFatherName}
             </p>
           )}
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             {attempt.takerEmail} {attempt.takerStudentId && `· ID: ${attempt.takerStudentId}`}
           </p>
         </div>
         <button onClick={handleExportPDF}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium border cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border cursor-pointer"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-          <Download size={14} /> Export PDF
+          <Download size={12} /> Export PDF
         </button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="text-2xl font-bold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        <div className="p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="text-lg font-bold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
             {attempt.percentage}%
           </div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Score</div>
         </div>
-        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{attempt.score}/{attempt.maxScore}</div>
+        <div className="p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="text-lg font-bold" style={{ color: 'var(--text)' }}>{attempt.score}/{attempt.maxScore}</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Points</div>
         </div>
-        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+        <div className="p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="text-lg font-bold" style={{ color: 'var(--text)' }}>
             {attempt.timeTakenSeconds ? `${Math.floor(attempt.timeTakenSeconds / 60)}m ${attempt.timeTakenSeconds % 60}s` : '—'}
           </div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Time Taken</div>
         </div>
-        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>#{attempt.attemptNumber}</div>
+        <div className="p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="text-lg font-bold" style={{ color: 'var(--text)' }}>#{attempt.attemptNumber}</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Attempt</div>
         </div>
       </div>
 
-      {/* Anti-cheat events */}
       {attempt.antiCheatEvents.length > 0 && (
-        <div className="mb-6 p-4 rounded border" style={{ backgroundColor: 'var(--warning)' + '08', borderColor: 'var(--warning)' + '40' }}>
-          <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--warning)' }}>
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--warning)' + '08', borderColor: 'var(--warning)' + '40' }}>
+          <h3 className="text-xs font-semibold mb-2" style={{ color: 'var(--warning)' }}>
             Anti-Cheat Events ({attempt.antiCheatEvents.length})
           </h3>
           <div className="space-y-1">
@@ -106,23 +119,22 @@ export default function ResultDetail() {
         </div>
       )}
 
-      {/* Question Breakdown */}
-      <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+      <h2 className="text-xs font-semibold mb-3" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
         Question Breakdown
       </h2>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {test.questions.map((q, idx) => {
           const answer = attempt.answers.find(a => a.questionId === q.id);
           const isCorrect = checkCorrectness(q, answer);
 
           return (
-            <div key={q.id} className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div key={q.id} className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
-                  {isCorrect === true && <Check size={14} style={{ color: 'var(--success)' }} />}
-                  {isCorrect === false && <X size={14} style={{ color: 'var(--error)' }} />}
-                  {isCorrect === null && <Minus size={14} style={{ color: 'var(--text-muted)' }} />}
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
+                  {isCorrect === true && <Check size={12} style={{ color: 'var(--success)' }} />}
+                  {isCorrect === false && <X size={12} style={{ color: 'var(--error)' }} />}
+                  {isCorrect === null && <Minus size={12} style={{ color: 'var(--text-muted)' }} />}
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{q.points} pts</span>
                 </div>
                 {answer?.flagged && (
@@ -131,8 +143,8 @@ export default function ResultDetail() {
                   </span>
                 )}
               </div>
-              <p className="text-sm mb-2" style={{ color: 'var(--text)' }}>{q.text}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              <p className="text-xs mb-2" style={{ color: 'var(--text)' }}>{q.text}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Student answer: </span>
                   <span style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
@@ -161,7 +173,7 @@ export default function ResultDetail() {
 
 function checkCorrectness(question: any, answer: any): boolean | null {
   if (!answer || !answer.answer || answer.answer === '') return null;
-  if (question.type === 'essay') return null; // Manual grading
+  if (question.type === 'essay') return null;
 
   switch (question.type) {
     case 'multiple-choice-single':

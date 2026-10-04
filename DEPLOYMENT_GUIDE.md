@@ -1,385 +1,267 @@
-# SuperiorTests - Firestore Setup & GitHub Deployment Guide
+# SuperiorTests — Setup & Deployment Guide
 
-## Overview
+## Quick Start
 
-This guide will help you:
-1. Set up Firebase Firestore database
-2. Deploy your SuperiorTests application to GitHub Pages
-
----
-
-## Part 1: Firebase Firestore Setup
-
-### Step 1: Create Firebase Project
+### 1. Create Firebase Project
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Add project"
-3. Enter project name: `superiortests` (or your preferred name)
-4. Disable Google Analytics (optional)
-5. Click "Create project"
+2. Click **"Add project"** → Name it (e.g., `superiortests`)
+3. Disable Google Analytics (optional) → **Create project**
 
-### Step 2: Enable Firestore Database
+### 2. Enable Authentication
 
-1. In Firebase Console, click "Firestore Database" in the left sidebar
-2. Click "Create database"
-3. Select "Start in production mode"
-4. Choose your preferred location (closest to your users)
-5. Click "Enable"
+1. In Firebase Console → **Authentication** → **Get started**
+2. Enable **Email/Password** provider → **Save**
 
-### Step 3: Configure Firestore Security Rules
+### 3. Create Firestore Database
 
-Replace the default rules with:
+1. In Firebase Console → **Firestore Database** → **Create database**
+2. Select **"Start in production mode"**
+3. Choose location closest to your users → **Enable**
+
+### 4. Set Firestore Security Rules
+
+Go to **Firestore Database** → **Rules** tab → Replace with:
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only access their own data
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Tests - owners can manage, anyone can read published tests
     match /tests/{testId} {
       allow read: if true;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      
-      // Attempts - anyone can create, only owners can read their test's attempts
-      match /attempts/{attemptId} {
-        allow create: if true;
-        allow read: if true;
-        allow update: if true;
-      }
+      allow update, delete: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         request.resource.data.ownerId == request.auth.uid);
     }
     
-    // Attempts collection at root level
     match /attempts/{attemptId} {
-      allow create: if true;
-      allow read, update: if true;
+      allow read, create, update: if true;
     }
   }
 }
 ```
 
-### Step 4: Enable Authentication
+### 5. Get Your Firebase Config
 
-1. In Firebase Console, click "Authentication" in the left sidebar
-2. Click "Get started"
-3. Enable "Email/Password" provider
-4. Click "Save"
+1. Go to **Project Settings** (gear icon) → **General**
+2. Scroll to **"Your apps"** → Click web icon `</>`
+3. Register app name: `superiortests-web`
+4. Copy the config values
 
-### Step 5: Get Firebase Configuration
+### 6. Add Config to Your Code
 
-1. In Firebase Console, click the gear icon ⚙️ → "Project settings"
-2. Scroll down to "Your apps" section
-3. Click the web icon `</>`
-4. Register app name: `superiortests-web`
-5. Copy the configuration object
+Open `src/firebase.ts` and replace the placeholder values:
 
-It will look like this:
-
-```javascript
+```typescript
 const firebaseConfig = {
-  apiKey: "AIza...",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
+  apiKey: "AIzaSy...",           // ← Your API key
+  authDomain: "your-app.firebaseapp.com",
+  projectId: "your-app-id",
+  storageBucket: "your-app.appspot.com",
   messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
+  appId: "1:123:web:abc123"
 };
 ```
 
-### Step 6: Update Your Code
-
-Replace the placeholder config in `src/firebase.ts` with your actual configuration:
-
-```typescript
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-```
-
----
-
-## Part 2: Component Migration (Required)
-
-**Important:** The current components use synchronous localStorage calls. You need to update them to use async Firestore calls.
-
-### Example Migration Pattern
-
-**Before (localStorage):**
-```typescript
-const tests = getUserTests(userId);
-setTests(tests);
-```
-
-**After (Firestore):**
-```typescript
-const tests = await getUserTests(userId);
-setTests(tests);
-```
-
-### Files That Need Updates
-
-All page components need to be updated to handle async operations:
-
-1. `src/pages/Dashboard.tsx`
-2. `src/pages/Login.tsx`
-3. `src/pages/Signup.tsx`
-4. `src/pages/TestEditor.tsx`
-5. `src/pages/TestSettings.tsx`
-6. `src/pages/TestTake.tsx`
-7. `src/pages/Results.tsx`
-8. `src/pages/ResultDetail.tsx`
-9. `src/pages/Profile.tsx`
-
-### Quick Migration Example
-
-**Dashboard.tsx:**
-```typescript
-// Change this:
-useEffect(() => {
-  if (user) {
-    setTests(getUserTests(user.id));
-  }
-}, [user]);
-
-// To this:
-useEffect(() => {
-  async function loadTests() {
-    if (user) {
-      const tests = await getUserTests(user.id);
-      setTests(tests);
-    }
-  }
-  loadTests();
-}, [user]);
-```
-
----
-
-## Part 3: GitHub Deployment
-
-### Step 1: Create GitHub Repository
-
-1. Go to [GitHub](https://github.com/)
-2. Click "New repository"
-3. Repository name: `superiortests`
-4. Make it public or private (your choice)
-5. **Don't** initialize with README
-6. Click "Create repository"
-
-### Step 2: Initialize Git and Push
-
-Open terminal in your project directory:
+### 7. Run Locally
 
 ```bash
-# Initialize git
+npm install
+npm run dev
+```
+
+Open http://localhost:5173
+
+---
+
+## Deploy to GitHub Pages
+
+### 1. Push to GitHub
+
+```bash
 git init
-
-# Add all files
 git add .
-
-# Commit
-git commit -m "Initial commit: SuperiorTests with Firestore"
-
-# Add GitHub remote (replace with your GitHub username)
+git commit -m "SuperiorTests - production ready"
 git remote add origin https://github.com/YOUR_USERNAME/superiortests.git
-
-# Push to GitHub
 git branch -M main
 git push -u origin main
 ```
 
-### Step 3: Configure for GitHub Pages
+### 2. Enable GitHub Pages
 
-Create a file `.github/workflows/deploy.yml`:
+1. Go to your repo → **Settings** → **Pages**
+2. Source: **GitHub Actions**
+
+### 3. Create Workflow File
+
+Create `.github/workflows/deploy.yml`:
 
 ```yaml
 name: Deploy to GitHub Pages
-
 on:
   push:
-    branches: [ main ]
-
+    branches: [main]
 permissions:
   contents: read
   pages: write
   id-token: write
-
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build
-        run: npm run build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-      
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
 ```
 
-### Step 4: Add Firebase Config as GitHub Secrets
+### 4. Push the Workflow
 
-1. Go to your GitHub repository
-2. Click "Settings" → "Secrets and variables" → "Actions"
-3. Click "New repository secret"
-4. Add each Firebase config value:
-   - `VITE_FIREBASE_API_KEY`
-   - `VITE_FIREBASE_AUTH_DOMAIN`
-   - `VITE_FIREBASE_PROJECT_ID`
-   - `VITE_FIREBASE_STORAGE_BUCKET`
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
-   - `VITE_FIREBASE_APP_ID`
-
-### Step 5: Enable GitHub Pages
-
-1. Go to repository "Settings" → "Pages"
-2. Under "Build and deployment", select "GitHub Actions" as source
-3. The workflow will automatically deploy on every push to main
-
-### Step 6: Access Your Deployed Site
-
-After the workflow completes (2-3 minutes), your site will be available at:
+```bash
+git add .github/workflows/deploy.yml
+git commit -m "Add deployment workflow"
+git push
 ```
-https://YOUR_USERNAME.github.io/superiortests/
+
+Your site will be live at: `https://YOUR_USERNAME.github.io/superiortests/`
+
+---
+
+## Deploy to Firebase Hosting (Alternative)
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init hosting
+# Set public directory: dist
+# Configure as single-page app: Yes
+# Don't overwrite index.html: No
+
+npm run build
+firebase deploy
 ```
 
 ---
 
-## Part 4: Environment Variables for Development
+## Deploy to Vercel (Easiest)
 
-Create a `.env` file in your project root (add to `.gitignore`):
+1. Go to [vercel.com](https://vercel.com) → Sign in with GitHub
+2. Click **"New Project"** → Import your repo
+3. Framework: **Vite**
+4. Click **Deploy**
 
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+Done! Vercel auto-deploys on every push.
+
+---
+
+## Deploy to Netlify
+
+1. Go to [netlify.com](https://netlify.com) → Sign in with GitHub
+2. Click **"Add new site"** → Import from Git
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+5. Click **Deploy**
+
+---
+
+## Environment Variables (Optional)
+
+For production, use environment variables instead of hardcoding Firebase config.
+
+Create `.env` (add to `.gitignore`):
+
+```
+VITE_FIREBASE_API_KEY=your_key
+VITE_FIREBASE_AUTH_DOMAIN=your_domain
+VITE_FIREBASE_PROJECT_ID=your_project
+VITE_FIREBASE_STORAGE_BUCKET=your_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
+The app already reads from these via `import.meta.env.VITE_*`.
+
 ---
 
-## Part 5: Testing Your Deployment
+## Architecture
 
-### Local Testing
-
-```bash
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Open http://localhost:5173
+```
+superiortests/
+├── src/
+│   ├── firebase.ts          # Firebase config
+│   ├── firestoreStore.ts    # All database operations
+│   ├── AuthContext.tsx       # Auth state management
+│   ├── types.ts             # TypeScript types
+│   ├── App.tsx              # Routing + auth guards
+│   ├── index.css            # Design tokens + Tailwind
+│   ├── components/
+│   │   └── Layout.tsx       # App shell (header, nav)
+│   ├── pages/
+│   │   ├── Landing.tsx      # Public landing page
+│   │   ├── Login.tsx        # Email/password login
+│   │   ├── Signup.tsx       # Account creation
+│   │   ├── Dashboard.tsx    # Test list (teacher view)
+│   │   ├── TestEditor.tsx   # Create/edit tests
+│   │   ├── TestSettings.tsx # Test configuration
+│   │   ├── TestTake.tsx     # Test-taking interface
+│   │   ├── Results.tsx      # Results table
+│   │   ├── ResultDetail.tsx # Per-student breakdown
+│   │   ├── Profile.tsx      # Account settings
+│   │   └── ResetPassword.tsx
+│   └── utils/
+│       └── pdf.ts           # PDF/CSV export
+├── index.html
+├── package.json
+└── vite.config.ts
 ```
 
-### Production Testing
+## Data Model (Firestore Collections)
 
-After GitHub Actions deploys:
-1. Visit your GitHub Pages URL
-2. Test creating an account
-3. Test creating a test
-4. Test taking the test
-5. Verify data is saved in Firestore
+| Collection | Description |
+|---|---|
+| `users/{uid}` | Teacher accounts (name, email) |
+| `tests/{testId}` | Test definitions + settings + questions |
+| `attempts/{attemptId}` | Student submissions + answers + scores |
 
----
+## Features
+
+- ✅ 8 question types (MC single/multi, T/F, fill-blank, short answer, essay, numeric, matching)
+- ✅ Two-step test access (verification → identity)
+- ✅ Father's name collection
+- ✅ Anti-cheat controls (8 independently toggleable)
+- ✅ Timed assessments with auto-submit
+- ✅ Passcode / email whitelist / student ID access modes
+- ✅ PDF and CSV result exports
+- ✅ Dark/light theme
+- ✅ KaTeX math rendering
+- ✅ Bulk question import
+- ✅ Real-time cloud sync via Firestore
 
 ## Troubleshooting
 
-### Issue: Firebase permission errors
-
-**Solution:** Check Firestore security rules in Firebase Console
-
-### Issue: GitHub Pages shows 404
-
-**Solution:** 
-1. Check that GitHub Actions workflow completed successfully
-2. Verify the workflow file is in `.github/workflows/deploy.yml`
-3. Check that "GitHub Actions" is selected as the source in Pages settings
-
-### Issue: Firebase config not loading
-
-**Solution:**
-1. Verify environment variables are set correctly
-2. Check that variable names start with `VITE_`
-3. Rebuild the project after changing environment variables
-
-### Issue: Authentication not working
-
-**Solution:**
-1. Verify "Email/Password" is enabled in Firebase Authentication
-2. Check Firebase Console → Authentication → Users to see if users are being created
-
----
-
-## Security Best Practices
-
-1. **Never commit `.env` file** - Add it to `.gitignore`
-2. **Use GitHub Secrets** for Firebase config in production
-3. **Set strict Firestore rules** - Only allow authenticated users to write
-4. **Enable Firebase App Check** (optional but recommended)
-5. **Monitor Firestore usage** in Firebase Console
-
----
-
-## Next Steps
-
-1. ✅ Complete component migration to async Firestore calls
-2. ✅ Test locally with Firestore
-3. ✅ Push to GitHub
-4. ✅ Configure GitHub Secrets
-5. ✅ Deploy to GitHub Pages
-6. ✅ Test production deployment
-7. ✅ Share your test links!
-
----
-
-## Support
-
-- Firebase Documentation: https://firebase.google.com/docs
-- GitHub Pages Documentation: https://docs.github.com/en/pages
-- Vite Documentation: https://vitejs.dev/
-
----
-
-**Your SuperiorTests platform is ready for deployment!** 🚀
+| Issue | Fix |
+|---|---|
+| "Missing or insufficient permissions" | Check Firestore security rules |
+| Blank page after deploy | Ensure SPA routing is configured |
+| Login not working | Verify Email/Password auth is enabled |
+| Tests not loading | Check browser console for Firestore errors |
+| Build fails | Run `npm install` then `npm run build` |

@@ -1,38 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCurrentUser, getUserTests, deleteTest, getTestStats, publishTest, unpublishTest } from '../store';
+import { useAuth } from '../AuthContext';
+import { getUserTests, deleteTest, getTestStats, publishTest, unpublishTest } from '../firestoreStore';
 import { Test } from '../types';
-import { Plus, Trash2, ExternalLink, Copy, Check } from 'lucide-react';
+import { Plus, Trash2, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const { user } = useAuth();
   const [tests, setTests] = useState<Test[]>([]);
+  const [loading, setLoading] = useState(true);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      setTests(getUserTests(user.id));
+    async function loadTests() {
+      if (user) {
+        const userTests = await getUserTests(user.uid);
+        setTests(userTests);
+      }
+      setLoading(false);
     }
+    loadTests();
   }, [user]);
 
   if (!user) return null;
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Delete this test and all its results? This cannot be undone.')) {
-      deleteTest(id);
-      setTests(getUserTests(user.id));
+      await deleteTest(id);
+      const userTests = await getUserTests(user.uid);
+      setTests(userTests);
     }
   };
 
-  const handleTogglePublish = (test: Test) => {
+  const handleTogglePublish = async (test: Test) => {
     if (test.published) {
-      unpublishTest(test.id);
+      await unpublishTest(test.id);
     } else {
-      publishTest(test.id);
+      await publishTest(test.id);
     }
-    setTests(getUserTests(user.id));
+    const userTests = await getUserTests(user.uid);
+    setTests(userTests);
   };
 
   const copyLink = (slug: string) => {
@@ -42,9 +51,12 @@ export default function Dashboard() {
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
+  if (loading) {
+    return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading tests…</div>;
+  }
+
   return (
     <div>
-      {/* Page header */}
       <div className="flex items-center justify-between mb-4 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
         <div>
           <h1 className="text-base font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
@@ -84,7 +96,6 @@ export default function Dashboard() {
                 <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
                   <th className="text-left px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Name</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>Questions</th>
-                  <th className="text-left px-3 py-2 text-xs font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Submissions</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Status</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Modified</th>
                   <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Actions</th>
@@ -92,7 +103,7 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {tests.map(test => {
-                  const stats = getTestStats(test.id);
+                  const stats = getTestStats(test.id, []);
                   return (
                     <tr key={test.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
                       <td className="px-3 py-2">
@@ -109,9 +120,6 @@ export default function Dashboard() {
                       </td>
                       <td className="px-3 py-2 text-xs hidden sm:table-cell" style={{ color: 'var(--text-secondary)' }}>
                         {test.questions.length}
-                      </td>
-                      <td className="px-3 py-2 text-xs hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>
-                        {stats?.totalAttempts || 0}
                       </td>
                       <td className="px-3 py-2 hidden lg:table-cell">
                         <span className="badge" style={{
