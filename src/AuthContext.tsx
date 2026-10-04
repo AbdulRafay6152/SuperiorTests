@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { setCurrentUser } from './firestoreStore';
 
 interface UserData {
   uid: string;
@@ -26,21 +27,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           const data = userDoc.data();
-          setUser({
+          const userData = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
             name: data?.name || firebaseUser.displayName || '',
+          };
+          setUser(userData);
+          // Sync with firestoreStore
+          setCurrentUser({
+            id: userData.uid,
+            email: userData.email,
+            name: userData.name,
+            createdAt: data?.createdAt || new Date().toISOString()
           });
         } catch (err) {
           console.error('Error fetching user data:', err);
-          setUser({
+          const userData = {
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
             name: firebaseUser.displayName || '',
+          };
+          setUser(userData);
+          setCurrentUser({
+            id: userData.uid,
+            email: userData.email,
+            name: userData.name,
+            createdAt: new Date().toISOString()
           });
         }
       } else {
         setUser(null);
+        setCurrentUser(null);
       }
       setLoading(false);
     });

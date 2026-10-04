@@ -40,6 +40,11 @@ let currentUser: User | null = null;
 let currentTheme: 'light' | 'dark' = 
   (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
 
+// Allow AuthContext to sync the current user
+export function setCurrentUser(user: User | null): void {
+  currentUser = user;
+}
+
 // ============================================
 // AUTH FUNCTIONS
 // ============================================
@@ -173,7 +178,9 @@ export async function resetPassword(email: string): Promise<{ success: boolean; 
 // ============================================
 
 export async function createTest(name: string): Promise<Test> {
-  if (!currentUser) {
+  // Use currentUser from store, or fall back to Firebase auth
+  const userId = currentUser?.id || auth.currentUser?.uid;
+  if (!userId) {
     throw new Error('No user logged in');
   }
   
@@ -214,7 +221,7 @@ export async function createTest(name: string): Promise<Test> {
   };
   
   const testData: Omit<Test, 'id'> = {
-    ownerId: currentUser.id,
+    ownerId: userId,
     slug,
     settings: defaultSettings,
     questions: [],
@@ -278,18 +285,23 @@ export async function getUserTests(userId?: string): Promise<Test[]> {
   }
   
   try {
+    // Query without orderBy to avoid needing a composite index
     const q = query(
       collection(db, 'tests'),
-      where('ownerId', '==', uid),
-      orderBy('updatedAt', 'desc')
+      where('ownerId', '==', uid)
     );
     
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
+    const tests = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Test));
+    
+    // Sort client-side by updatedAt descending
+    return tests.sort((a, b) => 
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
   } catch (error) {
     console.error('Error getting user tests:', error);
     return [];
