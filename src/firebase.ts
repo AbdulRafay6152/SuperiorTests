@@ -13,12 +13,12 @@ import { getFirestore } from 'firebase/firestore';
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY_HERE",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", // ← Replace with your API key
+  authDomain: "superiortests-xxxxx.firebaseapp.com", // ← Replace with your auth domain
+  projectId: "superiortests-xxxxx", // ← Replace with your project ID
+  storageBucket: "superiortests-xxxxx.appspot.com", // ← Replace with your storage bucket
+  messagingSenderId: "123456789012", // ← Replace with your sender ID
+  appId: "1:123456789012:web:abcdef1234567890" // ← Replace with your app ID
 };
 
 // Initialize Firebase
