@@ -1,0 +1,235 @@
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { getTest, updateTest } from '../store';
+import { TestSettings as TestSettingsType } from '../types';
+import { Save, ArrowLeft } from 'lucide-react';
+
+export default function TestSettingsPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const test = getTest(id || '');
+  const [settings, setSettings] = useState<TestSettingsType>(test?.settings || getDefaultSettings());
+  const [saving, setSaving] = useState(false);
+
+  if (!test) { navigate('/dashboard'); return null; }
+
+  function getDefaultSettings(): TestSettingsType {
+    return {
+      name: '', description: '', timeLimitMinutes: null, attemptLimit: null,
+      passcode: null, emailWhitelist: [], studentIdList: [], accessMode: 'open',
+      startDate: null, endDate: null, showResults: true, showCorrectAnswers: true,
+      completionMessage: 'Thank you. Your responses have been recorded.',
+      negativeMarking: false, negativeMarkingPenalty: 0.25, allowBlankSubmissions: true,
+      onePerPage: false, shuffleQuestions: false, shuffleOptions: false,
+      antiCheat: { tabSwitchDetection: false, fullscreenEnforcement: false, disableCopyPaste: false,
+        disableRightClick: false, disableTextSelection: false, watermark: false, preventRefresh: false, resumeControl: false },
+      notifyOnSubmit: false,
+    };
+  }
+
+  const save = () => {
+    setSaving(true);
+    updateTest({ ...test, settings });
+    setTimeout(() => { setSaving(false); navigate(`/test/${test.id}/edit`); }, 500);
+  };
+
+  const update = (partial: Partial<TestSettingsType>) => setSettings({ ...settings, ...partial });
+  const updateAC = (partial: Partial<TestSettingsType['antiCheat']>) => 
+    setSettings({ ...settings, antiCheat: { ...settings.antiCheat, ...partial } });
+
+  const parseList = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean);
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center gap-3 mb-6">
+        <Link to={`/test/${test.id}/edit`} className="no-underline" style={{ color: 'var(--accent)' }}>
+          <ArrowLeft size={16} className="inline" /> Back to Editor
+        </Link>
+      </div>
+
+      <h1 className="text-2xl font-bold mb-6" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+        Test Settings
+      </h1>
+
+      <div className="space-y-6">
+        {/* General */}
+        <Section title="General">
+          <Field label="Test Name">
+            <input type="text" value={settings.name} onChange={e => update({ name: e.target.value })}
+              className="w-full px-3 py-2 rounded border text-sm outline-none"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+          </Field>
+          <Field label="Description / Instructions">
+            <textarea value={settings.description} onChange={e => update({ description: e.target.value })}
+              className="w-full px-3 py-2 rounded border text-sm outline-none resize-y"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              rows={3} placeholder="Instructions shown to students before they begin..." />
+          </Field>
+          <Field label="Completion Message">
+            <textarea value={settings.completionMessage} onChange={e => update({ completionMessage: e.target.value })}
+              className="w-full px-3 py-2 rounded border text-sm outline-none resize-y"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              rows={2} />
+          </Field>
+        </Section>
+
+        {/* Timing & Attempts */}
+        <Section title="Timing & Attempts">
+          <Field label="Time Limit">
+            <div className="flex items-center gap-2">
+              <input type="number" value={settings.timeLimitMinutes || ''} onChange={e => update({ timeLimitMinutes: e.target.value ? parseInt(e.target.value) : null })}
+                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                min={1} placeholder="∞" />
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>minutes (leave blank for unlimited)</span>
+            </div>
+          </Field>
+          <Field label="Attempt Limit">
+            <div className="flex items-center gap-2">
+              <input type="number" value={settings.attemptLimit || ''} onChange={e => update({ attemptLimit: e.target.value ? parseInt(e.target.value) : null })}
+                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                min={1} placeholder="∞" />
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>attempts (leave blank for unlimited)</span>
+            </div>
+          </Field>
+          <Field label="Availability Window">
+            <div className="flex gap-3 flex-wrap">
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Start Date</label>
+                <input type="datetime-local" value={settings.startDate || ''} onChange={e => update({ startDate: e.target.value || null })}
+                  className="px-3 py-2 rounded border text-sm outline-none"
+                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+              </div>
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>End Date</label>
+                <input type="datetime-local" value={settings.endDate || ''} onChange={e => update({ endDate: e.target.value || null })}
+                  className="px-3 py-2 rounded border text-sm outline-none"
+                  style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+              </div>
+            </div>
+          </Field>
+        </Section>
+
+        {/* Access Control */}
+        <Section title="Access Control">
+          <Field label="Access Mode">
+            <select value={settings.accessMode} onChange={e => update({ accessMode: e.target.value as TestSettingsType['accessMode'] })}
+              className="px-3 py-2 rounded border text-sm outline-none cursor-pointer"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+              <option value="open">Open — anyone with the link</option>
+              <option value="passcode">Passcode protected</option>
+              <option value="whitelist-email">Email whitelist only</option>
+              <option value="whitelist-id">Student ID list only</option>
+            </select>
+          </Field>
+          {settings.accessMode === 'passcode' && (
+            <Field label="Passcode">
+              <input type="text" value={settings.passcode || ''} onChange={e => update({ passcode: e.target.value || null })}
+                className="w-full px-3 py-2 rounded border text-sm outline-none font-mono"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                placeholder="Enter passcode" />
+            </Field>
+          )}
+          {settings.accessMode === 'whitelist-email' && (
+            <Field label="Allowed Emails (one per line)">
+              <textarea value={settings.emailWhitelist.join('\n')} 
+                onChange={e => update({ emailWhitelist: parseList(e.target.value) })}
+                className="w-full px-3 py-2 rounded border text-sm outline-none resize-y font-mono"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                rows={4} placeholder="student@university.edu" />
+            </Field>
+          )}
+          {settings.accessMode === 'whitelist-id' && (
+            <Field label="Allowed Student IDs (one per line)">
+              <textarea value={settings.studentIdList.join('\n')}
+                onChange={e => update({ studentIdList: parseList(e.target.value) })}
+                className="w-full px-3 py-2 rounded border text-sm outline-none resize-y font-mono"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                rows={4} placeholder="STU2024001" />
+            </Field>
+          )}
+        </Section>
+
+        {/* Display & Scoring */}
+        <Section title="Display & Scoring">
+          <Toggle label="Show results immediately after submission" checked={settings.showResults} onChange={v => update({ showResults: v })} />
+          <Toggle label="Show correct answers and explanations after submission" checked={settings.showCorrectAnswers} onChange={v => update({ showCorrectAnswers: v })} />
+          <Toggle label="Enable negative marking" checked={settings.negativeMarking} onChange={v => update({ negativeMarking: v })} />
+          {settings.negativeMarking && (
+            <Field label="Penalty per wrong answer (fraction of points)">
+              <input type="number" value={settings.negativeMarkingPenalty} onChange={e => update({ negativeMarkingPenalty: parseFloat(e.target.value) || 0 })}
+                className="w-24 px-3 py-2 rounded border text-sm outline-none"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                min={0} max={1} step={0.05} />
+            </Field>
+          )}
+          <Toggle label="Allow blank submissions" checked={settings.allowBlankSubmissions} onChange={v => update({ allowBlankSubmissions: v })} />
+          <Toggle label="One question per page" checked={settings.onePerPage} onChange={v => update({ onePerPage: v })} />
+          <Toggle label="Shuffle questions" checked={settings.shuffleQuestions} onChange={v => update({ shuffleQuestions: v })} />
+          <Toggle label="Shuffle answer options" checked={settings.shuffleOptions} onChange={v => update({ shuffleOptions: v })} />
+        </Section>
+
+        {/* Anti-Cheat */}
+        <Section title="Anti-Cheat Controls">
+          <Toggle label="Tab-switch / window-blur detection" checked={settings.antiCheat.tabSwitchDetection} onChange={v => updateAC({ tabSwitchDetection: v })} />
+          <Toggle label="Fullscreen enforcement" checked={settings.antiCheat.fullscreenEnforcement} onChange={v => updateAC({ fullscreenEnforcement: v })} />
+          <Toggle label="Disable copy/paste" checked={settings.antiCheat.disableCopyPaste} onChange={v => updateAC({ disableCopyPaste: v })} />
+          <Toggle label="Disable right-click context menu" checked={settings.antiCheat.disableRightClick} onChange={v => updateAC({ disableRightClick: v })} />
+          <Toggle label="Disable text selection" checked={settings.antiCheat.disableTextSelection} onChange={v => updateAC({ disableTextSelection: v })} />
+          <Toggle label="Watermark overlay with taker's name" checked={settings.antiCheat.watermark} onChange={v => updateAC({ watermark: v })} />
+          <Toggle label="Prevent page refresh during attempt" checked={settings.antiCheat.preventRefresh} onChange={v => updateAC({ preventRefresh: v })} />
+          <Toggle label="Resume control (paused attempts require owner approval)" checked={settings.antiCheat.resumeControl} onChange={v => updateAC({ resumeControl: v })} />
+        </Section>
+
+        {/* Notifications */}
+        <Section title="Notifications">
+          <Toggle label="Email me when a new result is submitted" checked={settings.notifyOnSubmit} onChange={v => update({ notifyOnSubmit: v })} />
+        </Section>
+
+        {/* Save */}
+        <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+          <button onClick={save} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold border-none cursor-pointer"
+            style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
+            <Save size={14} /> {saving ? 'Saving…' : 'Save Settings'}
+          </button>
+          <Link to={`/test/${test.id}/edit`} className="px-4 py-2 rounded text-sm font-medium no-underline border"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            Cancel
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="p-5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <h2 className="text-base font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>{title}</h2>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text)' }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer">
+      <div className="relative">
+        <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
+        <div className="w-9 h-5 rounded-full transition-colors" style={{ backgroundColor: checked ? 'var(--accent)' : 'var(--border)' }} />
+        <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }} />
+      </div>
+      <span className="text-sm" style={{ color: 'var(--text)' }}>{label}</span>
+    </label>
+  );
+}

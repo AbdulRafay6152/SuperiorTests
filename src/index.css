@@ -1,1 +1,125 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #284B63;
+  --color-primary-light: #3A6B85;
+  --color-primary-dark: #1A3344;
+  --color-accent: #3C6E71;
+  --color-accent-light: #4D8A8E;
+  --color-accent-dark: #2B5052;
+  
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #D9D9D9;
+  --color-surface-tertiary: #F5F5F5;
+  --color-border: #E0E0E0;
+  --color-text: #1A1A1A;
+  --color-text-secondary: #555555;
+  --color-text-muted: #888888;
+  
+  --color-dark-surface: #0F1419;
+  --color-dark-surface-secondary: #1A2332;
+  --color-dark-surface-tertiary: #243040;
+  --color-dark-border: #2D3748;
+  --color-dark-text: #E8E8E8;
+  --color-dark-text-secondary: #A0AEC0;
+  --color-dark-text-muted: #718096;
+
+  --font-heading: 'Fira Sans', sans-serif;
+  --font-body: 'Fira Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius: 6px;
+}
+
+:root {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Light mode */
+html.light {
+  --bg: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #EBEBEB;
+  --surface: #FFFFFF;
+  --surface-hover: #F9F9F9;
+  --border: #E0E0E0;
+  --border-strong: #CCCCCC;
+  --text: #1A1A1A;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --primary: #284B63;
+  --primary-hover: #1F3D52;
+  --accent: #3C6E71;
+  --accent-hover: #2B5052;
+  --success: #059669;
+  --warning: #D97706;
+  --error: #DC2626;
+  --info: #2563EB;
+}
+
+/* Dark mode */
+html.dark {
+  --bg: #0F1419;
+  --bg-secondary: #1A2332;
+  --bg-tertiary: #243040;
+  --surface: #1A2332;
+  --surface-hover: #243040;
+  --border: #2D3748;
+  --border-strong: #4A5568;
+  --text: #E8E8E8;
+  --text-secondary: #A0AEC0;
+  --text-muted: #718096;
+  --primary: #4A90B8;
+  --primary-hover: #5BA3CB;
+  --accent: #5A9EA2;
+  --accent-hover: #6DB5B9;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --info: #60A5FA;
+}
+
+html.light body { background-color: var(--bg); color: var(--text); }
+html.dark body { background-color: var(--bg); color: var(--text); }
+
+/* Typography scale */
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* KaTeX overrides */
+.katex { font-size: 1em !important; }
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+}
