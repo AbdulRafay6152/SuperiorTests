@@ -97,6 +97,7 @@ export interface Answer {
   answer: string | string[] | Record<string, string>;
   flagged: boolean;
   timeSpentSeconds: number;
+  essayGrade?: number;
 }
 
 export interface Attempt {

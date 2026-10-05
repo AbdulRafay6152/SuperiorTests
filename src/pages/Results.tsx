@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTest, getTestAttempts, getTestStats } from '../firestoreStore';
+import { getTest, getTestAttempts, getTestStats, updateAttempt } from '../firestoreStore';
 import { Test, Attempt } from '../types';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, Play, Pause } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePDFReport, generateBulkPDFReport, exportCSV } from '../utils/pdf';
 
@@ -11,6 +11,7 @@ export default function Results() {
   const navigate = useNavigate();
   const [test, setTest] = useState<Test | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [pausedAttempts, setPausedAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'name' | 'score' | 'date'>('date');
@@ -24,12 +25,22 @@ export default function Results() {
           setTest(t);
           const a = await getTestAttempts(id);
           setAttempts(a.filter(x => x.status === 'submitted'));
+          setPausedAttempts(a.filter(x => x.status === 'paused'));
         }
       }
       setLoading(false);
     }
     loadData();
   }, [id]);
+
+  const handleResumeAttempt = async (attemptId: string) => {
+    const attempt = pausedAttempts.find(a => a.id === attemptId);
+    if (attempt) {
+      const updated = { ...attempt, status: 'in-progress' as const };
+      await updateAttempt(updated);
+      setPausedAttempts(pausedAttempts.filter(a => a.id !== attemptId));
+    }
+  };
 
   // All hooks must be called before any conditional returns
   const stats = useMemo(() => {
@@ -130,6 +141,45 @@ export default function Results() {
           <StatBox label="Highest" value={`${stats.highestScore}%`} />
           <StatBox label="Lowest" value={`${stats.lowestScore}%`} />
           <StatBox label="Pass rate" value={`${stats.passRate}%`} />
+        </div>
+      )}
+
+      {/* Paused Attempts Section */}
+      {pausedAttempts.length > 0 && (
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--warning)' + '08', borderColor: 'var(--warning)' + '40' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Pause size={14} style={{ color: 'var(--warning)' }} />
+            <h3 className="text-xs font-semibold" style={{ color: 'var(--warning)' }}>
+              Paused Attempts ({pausedAttempts.length})
+            </h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+            These attempts were paused due to anti-cheat detection. Resume to allow students to continue.
+          </p>
+          <div className="space-y-2">
+            {pausedAttempts.map((attempt: Attempt) => (
+              <div key={attempt.id} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: 'var(--surface)' }}>
+                <div className="flex-1">
+                  <div className="text-xs font-medium" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {attempt.takerEmail} {attempt.takerStudentId && `· ${attempt.takerStudentId}`}
+                  </div>
+                  {attempt.antiCheatEvents.length > 0 && (
+                    <div className="text-xs mt-1" style={{ color: 'var(--warning)' }}>
+                      {attempt.antiCheatEvents.length} anti-cheat event{attempt.antiCheatEvents.length !== 1 ? 's' : ''}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleResumeAttempt(attempt.id)}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border cursor-pointer"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--success)', color: '#fff' }}
+                >
+                  <Play size={10} /> Resume
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

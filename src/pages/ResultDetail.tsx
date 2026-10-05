@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTest, getAttempt } from '../firestoreStore';
-import { Test, Attempt } from '../types';
-import { ArrowLeft, Download, Check, X, Minus } from 'lucide-react';
+import { getTest, getAttempt, updateAttempt } from '../firestoreStore';
+import { Test, Attempt, Question } from '../types';
+import { ArrowLeft, Download, Check, X, Minus, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePDFReport } from '../utils/pdf';
 
@@ -12,6 +12,8 @@ export default function ResultDetail() {
   const [test, setTest] = useState<Test | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [essayGrades, setEssayGrades] = useState<Record<string, number>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -122,20 +124,79 @@ export default function ResultDetail() {
       <h2 className="text-xs font-semibold mb-3" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
         Question Breakdown
       </h2>
+      {/* Essay Grading Section */}
+      {test.questions.some((q: Question) => q.type === 'essay') && (
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+              Manual Grading Required
+            </h3>
+            <button
+              onClick={async () => {
+                setSaving(true);
+                // Update attempt with essay grades
+                const updatedAttempt = { ...attempt };
+                let totalScore = updatedAttempt.score || 0;
+                
+                test.questions.forEach((q: Question) => {
+                  if (q.type === 'essay' && essayGrades[q.id] !== undefined) {
+                    const answer = updatedAttempt.answers.find(a => a.questionId === q.id);
+                    if (answer) {
+                      answer.essayGrade = essayGrades[q.id];
+                      totalScore += essayGrades[q.id];
+                    }
+                  }
+                });
+                
+                updatedAttempt.score = totalScore;
+                updatedAttempt.percentage = Math.round((totalScore / updatedAttempt.maxScore) * 100);
+                
+                await updateAttempt(updatedAttempt);
+                setAttempt(updatedAttempt);
+                setSaving(false);
+              }}
+              disabled={saving}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border cursor-pointer disabled:opacity-50"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--primary)', color: '#fff' }}
+            >
+              <Save size={10} /> {saving ? 'Saving...' : 'Save Grades'}
+            </button>
+          </div>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+            Grade essay questions manually. Points will be added to the total score.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-2">
-        {test.questions.map((q, idx) => {
+        {test.questions.map((q: Question, idx: number) => {
           const answer = attempt.answers.find(a => a.questionId === q.id);
           const isCorrect = checkCorrectness(q, answer);
+          const isEssay = q.type === 'essay';
+          const essayGrade = answer?.essayGrade ?? essayGrades[q.id];
 
           return (
             <div key={q.id} className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
-                  {isCorrect === true && <Check size={12} style={{ color: 'var(--success)' }} />}
-                  {isCorrect === false && <X size={12} style={{ color: 'var(--error)' }} />}
-                  {isCorrect === null && <Minus size={12} style={{ color: 'var(--text-muted)' }} />}
+                  {isEssay ? (
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--accent)' + '20', color: 'var(--accent)' }}>
+                      Essay - Manual Grading
+                    </span>
+                  ) : (
+                    <>
+                      {isCorrect === true && <Check size={12} style={{ color: 'var(--success)' }} />}
+                      {isCorrect === false && <X size={12} style={{ color: 'var(--error)' }} />}
+                      {isCorrect === null && <Minus size={12} style={{ color: 'var(--text-muted)' }} />}
+                    </>
+                  )}
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{q.points} pts</span>
+                  {isEssay && essayGrade !== undefined && (
+                    <span className="text-xs font-semibold" style={{ color: 'var(--success)' }}>
+                      Graded: {essayGrade}/{q.points}
+                    </span>
+                  )}
                 </div>
                 {answer?.flagged && (
                   <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--warning)' + '20', color: 'var(--warning)' }}>
@@ -144,24 +205,60 @@ export default function ResultDetail() {
                 )}
               </div>
               <p className="text-xs mb-2" style={{ color: 'var(--text)' }}>{q.text}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Student answer: </span>
-                  <span style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
-                    {formatAnswer(answer?.answer) || '(no answer)'}
-                  </span>
+              
+              {/* Student Answer */}
+              <div className="mb-2">
+                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Student answer: </span>
+                <div className="mt-1 p-2 rounded text-xs" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text)' }}>
+                  {isEssay ? (
+                    <div className="whitespace-pre-wrap">{formatAnswer(answer?.answer) || '(no answer)'}</div>
+                  ) : (
+                    <span style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
+                      {formatAnswer(answer?.answer) || '(no answer)'}
+                    </span>
+                  )}
                 </div>
-                {test.settings.showCorrectAnswers && (
-                  <div>
-                    <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Correct answer: </span>
-                    <span style={{ color: 'var(--success)' }}>{getCorrectAnswer(q)}</span>
-                  </div>
-                )}
               </div>
-              {test.settings.showCorrectAnswers && q.explanation && (
-                <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                  {q.explanation}
-                </p>
+
+              {/* Essay Grading Input */}
+              {isEssay && (
+                <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text)' }}>
+                    Assign Points (0-{q.points}):
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={q.points}
+                    value={essayGrades[q.id] ?? ''}
+                    onChange={(e) => {
+                      const value = Math.min(q.points, Math.max(0, parseFloat(e.target.value) || 0));
+                      setEssayGrades({ ...essayGrades, [q.id]: value });
+                    }}
+                    className="w-20 px-2 py-1 rounded border text-xs outline-none"
+                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    placeholder="0"
+                  />
+                </div>
+              )}
+
+              {/* Correct Answer & Explanation */}
+              {!isEssay && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {test.settings.showCorrectAnswers && (
+                      <div>
+                        <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Correct answer: </span>
+                        <span style={{ color: 'var(--success)' }}>{getCorrectAnswer(q)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {test.settings.showCorrectAnswers && q.explanation && (
+                    <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                      {q.explanation}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           );

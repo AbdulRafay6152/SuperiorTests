@@ -140,21 +140,37 @@ export default function TestSettingsPage() {
             </Field>
           )}
           {settings.accessMode === 'whitelist-email' && (
-            <Field label="Allowed Emails (one per line)">
+            <Field label="Allowed Emails">
               <textarea value={settings.emailWhitelist.join('\n')} 
                 onChange={e => update({ emailWhitelist: parseList(e.target.value) })}
                 className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                rows={4} placeholder="student@university.edu" />
+                rows={6} placeholder={"student1@university.edu\nstudent2@university.edu\nteacher@university.edu"} />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Enter one email per line. Press Enter to add a new line.
+              </p>
+              {settings.emailWhitelist.length > 0 && (
+                <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
+                  {settings.emailWhitelist.length} email{settings.emailWhitelist.length !== 1 ? 's' : ''} added
+                </p>
+              )}
             </Field>
           )}
           {settings.accessMode === 'whitelist-id' && (
-            <Field label="Allowed Student IDs (one per line)">
+            <Field label="Allowed Student IDs">
               <textarea value={settings.studentIdList.join('\n')}
                 onChange={e => update({ studentIdList: parseList(e.target.value) })}
                 className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                rows={4} placeholder="STU2024001" />
+                rows={6} placeholder={"STU2024001\nSTU2024002\nSTU2024003"} />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Enter one student ID per line. Press Enter to add a new line.
+              </p>
+              {settings.studentIdList.length > 0 && (
+                <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
+                  {settings.studentIdList.length} ID{settings.studentIdList.length !== 1 ? 's' : ''} added
+                </p>
+              )}
             </Field>
           )}
         </Section>
