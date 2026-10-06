@@ -120,6 +120,31 @@ export default function TestSettingsPage() {
           </Field>
         </Section>
 
+        <Section title="Schedule">
+          <Field label="Start Date & Time">
+            <input 
+              type="datetime-local" 
+              value={settings.startDate || ''} 
+              onChange={e => update({ startDate: e.target.value || null })}
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+              Test becomes available from this date/time. Leave blank for immediate access.
+            </p>
+          </Field>
+          <Field label="End Date & Time">
+            <input 
+              type="datetime-local" 
+              value={settings.endDate || ''} 
+              onChange={e => update({ endDate: e.target.value || null })}
+              className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+              Test closes after this date/time. Students cannot submit after this. Leave blank for no deadline.
+            </p>
+          </Field>
+        </Section>
+
         <Section title="Access Control">
           <Field label="Access Mode">
             <select value={settings.accessMode} onChange={e => update({ accessMode: e.target.value as TestSettingsType['accessMode'] })}
@@ -141,35 +166,73 @@ export default function TestSettingsPage() {
           )}
           {settings.accessMode === 'whitelist-email' && (
             <Field label="Allowed Emails">
-              <textarea value={settings.emailWhitelist.join('\n')} 
+              <textarea 
+                value={settings.emailWhitelist.join('\n')} 
                 onChange={e => update({ emailWhitelist: parseList(e.target.value) })}
-                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
-                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                rows={6} placeholder={"student1@university.edu\nstudent2@university.edu\nteacher@university.edu"} />
+                className="w-full px-2.5 py-2 rounded border text-xs outline-none resize-y font-mono"
+                style={{ 
+                  backgroundColor: 'var(--surface)', 
+                  borderColor: 'var(--border)', 
+                  color: 'var(--text)',
+                  minHeight: '120px',
+                  lineHeight: '1.6'
+                }}
+                rows={6} 
+                placeholder={"student1@university.edu\nstudent2@university.edu\nteacher@university.edu"} 
+                spellCheck={false}
+              />
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Enter one email per line. Press Enter to add a new line.
+                💡 Enter one email per line. Press Enter/Return to add a new line.
               </p>
               {settings.emailWhitelist.length > 0 && (
-                <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
-                  {settings.emailWhitelist.length} email{settings.emailWhitelist.length !== 1 ? 's' : ''} added
-                </p>
+                <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--accent)' }}>
+                    ✓ {settings.emailWhitelist.length} email{settings.emailWhitelist.length !== 1 ? 's' : ''} added:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {settings.emailWhitelist.map((email, idx) => (
+                      <span key={idx} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
+                        {email}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </Field>
           )}
           {settings.accessMode === 'whitelist-id' && (
             <Field label="Allowed Student IDs">
-              <textarea value={settings.studentIdList.join('\n')}
+              <textarea 
+                value={settings.studentIdList.join('\n')}
                 onChange={e => update({ studentIdList: parseList(e.target.value) })}
-                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y font-mono"
-                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                rows={6} placeholder={"STU2024001\nSTU2024002\nSTU2024003"} />
+                className="w-full px-2.5 py-2 rounded border text-xs outline-none resize-y font-mono"
+                style={{ 
+                  backgroundColor: 'var(--surface)', 
+                  borderColor: 'var(--border)', 
+                  color: 'var(--text)',
+                  minHeight: '120px',
+                  lineHeight: '1.6'
+                }}
+                rows={6} 
+                placeholder={"STU2024001\nSTU2024002\nSTU2024003"} 
+                spellCheck={false}
+              />
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Enter one student ID per line. Press Enter to add a new line.
+                💡 Enter one student ID per line. Press Enter/Return to add a new line.
               </p>
               {settings.studentIdList.length > 0 && (
-                <p className="text-xs mt-1" style={{ color: 'var(--accent)' }}>
-                  {settings.studentIdList.length} ID{settings.studentIdList.length !== 1 ? 's' : ''} added
-                </p>
+                <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--accent)' }}>
+                    ✓ {settings.studentIdList.length} ID{settings.studentIdList.length !== 1 ? 's' : ''} added:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {settings.studentIdList.map((id, idx) => (
+                      <span key={idx} className="text-xs px-2 py-0.5 rounded font-mono" style={{ backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
+                        {id}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </Field>
           )}

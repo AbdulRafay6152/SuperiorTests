@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { getTestBySlug, createAttempt, updateAttempt, submitAttempt } from '../firestoreStore';
 import { Test, Question, Attempt, Answer, AntiCheatEvent } from '../types';
@@ -74,6 +74,24 @@ export default function TestTake() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [phase, test?.settings.antiCheat.preventRefresh]);
 
+  function logEvent(type: AntiCheatEvent['type'], details?: string) {
+    if (!attempt) return;
+    const event: AntiCheatEvent = { id: generateId(), attemptId: attempt.id, type, timestamp: new Date().toISOString(), details };
+    setAntiCheatEvents(prev => [...prev, event]);
+  }
+
+  const handleSubmit = useCallback(async () => {
+    if (!attempt) return;
+    const finalAttempt = { ...attempt, answers, antiCheatEvents: [...attempt.antiCheatEvents, ...antiCheatEvents] };
+    await updateAttempt(finalAttempt);
+    const submitted = await submitAttempt(attempt.id);
+    if (submitted) {
+      setAttempt(submitted);
+      setPhase('submitted');
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, [attempt, answers, antiCheatEvents]);
+
   // Timer
   useEffect(() => {
     if (phase !== 'running' || timeLeft === null || timeLeft <= 0) return;
@@ -94,25 +112,7 @@ export default function TestTake() {
     if (timeLeft === 0 && phase === 'running' && attempt) {
       handleSubmit();
     }
-  }, [timeLeft, phase]);
-
-  function logEvent(type: AntiCheatEvent['type'], details?: string) {
-    if (!attempt) return;
-    const event: AntiCheatEvent = { id: generateId(), attemptId: attempt.id, type, timestamp: new Date().toISOString(), details };
-    setAntiCheatEvents(prev => [...prev, event]);
-  }
-
-  async function handleSubmit() {
-    if (!attempt) return;
-    const finalAttempt = { ...attempt, answers, antiCheatEvents: [...attempt.antiCheatEvents, ...antiCheatEvents] };
-    await updateAttempt(finalAttempt);
-    const submitted = await submitAttempt(attempt.id);
-    if (submitted) {
-      setAttempt(submitted);
-      setPhase('submitted');
-    }
-    if (timerRef.current) clearInterval(timerRef.current);
-  }
+  }, [timeLeft, phase, attempt, handleSubmit]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
@@ -368,10 +368,27 @@ export default function TestTake() {
   const answeredCount = answers.filter((a: Answer) => a.answer !== '' && a.answer !== null).length;
   const acSettings = test.settings.antiCheat;
 
+  // Generate random text for anti-cheat copy protection
+  const generateRandomText = () => {
+    const words = ['Lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua'];
+    const randomWords = Array.from({ length: 20 }, () => words[Math.floor(Math.random() * words.length)]);
+    return randomWords.join(' ');
+  };
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}
-      onCopy={acSettings.disableCopyPaste ? (e) => { e.preventDefault(); logEvent('copy-attempt'); } : undefined}
-      onPaste={acSettings.disableCopyPaste ? (e) => { e.preventDefault(); logEvent('paste-attempt'); } : undefined}
+      onCopy={acSettings.disableCopyPaste ? (e) => {
+        e.preventDefault();
+        logEvent('copy-attempt', 'Copy blocked - random text inserted');
+        // Replace clipboard with random text
+        if (e.clipboardData) {
+          e.clipboardData.setData('text/plain', generateRandomText());
+        }
+      } : undefined}
+      onPaste={acSettings.disableCopyPaste ? (e) => { 
+        e.preventDefault(); 
+        logEvent('paste-attempt'); 
+      } : undefined}
       onContextMenu={acSettings.disableRightClick ? (e) => { e.preventDefault(); logEvent('right-click'); } : undefined}
     >
       {acSettings.watermark && (
