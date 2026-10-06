@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Auth Routes
+// GGDC Tests — Auth Routes
 // ============================================================
 
 import { Router, Request, Response } from 'express';
@@ -54,10 +54,10 @@ router.post('/signup', async (req: Request, res: Response) => {
     // Send welcome email
     await sendEmail({
       to: user.email,
-      subject: 'Welcome to SuperiorTests',
+      subject: 'Welcome to GGDC Tests',
       html: `
         <h2>Welcome, ${user.name}!</h2>
-        <p>Your SuperiorTests account has been created successfully.</p>
+        <p>Your GGDC Tests account has been created successfully.</p>
         <p>You can now create and manage online assessments for your students.</p>
         <p><a href="${config.appUrl}/dashboard">Go to Dashboard</a></p>
       `,
@@ -236,7 +236,7 @@ router.post('/password-reset', async (req: Request, res: Response) => {
     const resetUrl = `${config.appUrl}/reset-password?token=${token}`;
     await sendEmail({
       to: user.email,
-      subject: 'Reset Your SuperiorTests Password',
+      subject: 'Reset Your GGDC Tests Password',
       html: `
         <h2>Password Reset Request</h2>
         <p>You requested a password reset. Click the link below to reset your password:</p>

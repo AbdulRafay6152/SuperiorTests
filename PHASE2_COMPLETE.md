@@ -281,7 +281,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-SMTP_FROM=SuperiorTests <noreply@superiortests.com>
+SMTP_FROM=GGDC Tests <noreply@ggdctests.com>
 ```
 
 **Gmail Setup:**
@@ -364,7 +364,7 @@ SMTP_FROM=SuperiorTests <noreply@superiortests.com>
 
 ## 🎉 Project Status: COMPLETE
 
-**SuperiorTests is now a fully functional, production-ready online testing platform.**
+**GGDC Tests is now a fully functional, production-ready online testing platform for Government Girls Degree College.**
 
 - ✅ All features implemented (frontend + backend)
 - ✅ Database schema designed and documented

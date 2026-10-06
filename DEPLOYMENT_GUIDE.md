@@ -1,4 +1,4 @@
-# SuperiorTests — Setup & Deployment Guide
+# GGDC Tests — Setup & Deployment Guide
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ Open http://localhost:5173
 ```bash
 git init
 git add .
-git commit -m "SuperiorTests - production ready"
+git commit -m "GGDC Tests - production ready"
 git remote add origin https://github.com/YOUR_USERNAME/superiortests.git
 git branch -M main
 git push -u origin main

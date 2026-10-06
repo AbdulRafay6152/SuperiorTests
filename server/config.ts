@@ -23,7 +23,7 @@ export const config = {
   smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
   smtpUser: process.env.SMTP_USER || '',
   smtpPass: process.env.SMTP_PASS || '',
-  smtpFrom: process.env.SMTP_FROM || 'SuperiorTests <noreply@superiortests.com>',
+  smtpFrom: process.env.SMTP_FROM || 'GGDC Tests <noreply@ggdctests.com>',
 
   // App
   appUrl: process.env.APP_URL || 'http://localhost:5173',

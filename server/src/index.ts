@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Backend Server (Express + TypeScript)
+// GGDC Tests — Backend Server (Express + TypeScript)
 // ============================================================
 // Reference implementation for production deployment.
 // The frontend (src/) uses localStorage for demo; swap to these
@@ -39,7 +39,7 @@ app.use(errorHandler);
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✓ SuperiorTests API running on http://localhost:${PORT}`);
+  console.log(`✓ GGDC Tests API running on http://localhost:${PORT}`);
   console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 

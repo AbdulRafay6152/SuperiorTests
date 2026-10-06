@@ -1,4 +1,4 @@
-# SuperiorTests — Feature-to-Code Index
+# GGDC Tests — Feature-to-Code Index
 
 This document maps every feature to its implementation location in the codebase.
 
@@ -156,7 +156,7 @@ This document maps every feature to its implementation location in the codebase.
 |----------|----------|
 | Single-student report | `src/utils/pdf.ts` → `generatePDFReport()` |
 | Bulk multi-student report | `src/utils/pdf.ts` → `generateBulkPDFReport()` |
-| Branded header | `src/utils/pdf.ts` → `addHeader()` (Primary color bar + SuperiorTests wordmark) |
+| Branded header | `src/utils/pdf.ts` → `addHeader()` (Primary color bar + GGDC Tests wordmark) |
 | Score summary box | `src/utils/pdf.ts` (rounded rect with score) |
 | Question breakdown table | `src/utils/pdf.ts` (loop with ✓/✗ indicators) |
 | Anti-cheat flags section | `src/utils/pdf.ts` (warning-colored events) |

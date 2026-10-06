@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Prisma Schema (PostgreSQL)
+// GGDC Tests — Prisma Schema (PostgreSQL)
 // ============================================================
 // Run: npx prisma migrate dev --name init
 // Run: npx prisma generate

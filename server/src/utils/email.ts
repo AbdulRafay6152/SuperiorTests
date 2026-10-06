@@ -26,7 +26,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<vo
 
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'SuperiorTests <noreply@superiortests.com>',
+      from: process.env.SMTP_FROM || 'GGDC Tests <noreply@ggdctests.com>',
       to,
       subject,
       html,

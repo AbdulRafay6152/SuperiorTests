@@ -37,8 +37,8 @@ router.post('/signup', async (req: Request, res: Response) => {
     // Send welcome email
     await sendEmail({
       to: user.email,
-      subject: 'Welcome to SuperiorTests',
-      html: `<p>Hi ${user.name},</p><p>Your SuperiorTests account has been created. You can now create and manage online assessments.</p>`,
+      subject: 'Welcome to GGDC Tests',
+      html: `<p>Hi ${user.name},</p><p>Your GGDC Tests account has been created. You can now create and manage online assessments for Government Girls Degree College.</p>`,
     });
 
     res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
@@ -173,7 +173,7 @@ router.post('/reset-request', async (req: Request, res: Response) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     await sendEmail({
       to: user.email,
-      subject: 'Reset Your SuperiorTests Password',
+      subject: 'Reset Your GGDC Tests Password',
       html: `<p>Hi ${user.name},</p><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
 

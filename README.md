@@ -1,4 +1,4 @@
-# SuperiorTests - Production Ready
+# GGDC Tests - Production Ready
 
 A professional online testing platform built with React, TypeScript, Firebase Firestore, and Tailwind CSS. Fully cloud-based with no local storage dependencies.
 

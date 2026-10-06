@@ -16,10 +16,10 @@ function addHeader(doc: jsPDF, title: string) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('SuperiorTests', 14, 10.5);
+  doc.text('GGDC Tests', 14, 10.5);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('Online Testing Platform', 160, 10.5);
+  doc.text('Government Girls Degree College', 160, 10.5);
 
   // Title
   doc.setTextColor(...TEXT);
@@ -208,7 +208,7 @@ export function generatePDFReport(test: Test, attempt: Attempt): void {
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(...TEXT_SECONDARY);
-    doc.text(`SuperiorTests — Generated ${format(new Date(), 'MMM d, yyyy h:mm a')} — Page ${i} of ${pageCount}`, 14, 290);
+    doc.text(`GGDC Tests — Generated ${format(new Date(), 'MMM d, yyyy h:mm a')} — Page ${i} of ${pageCount}`, 14, 290);
   }
 
   doc.save(`${attempt.takerName.replace(/\s+/g, '_')}_${test.settings.name.replace(/\s+/g, '_')}_report.pdf`);
@@ -287,7 +287,7 @@ export function generateBulkPDFReport(test: Test, attempts: Attempt[]): void {
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(...TEXT_SECONDARY);
-    doc.text(`SuperiorTests — Generated ${format(new Date(), 'MMM d, yyyy h:mm a')} — Page ${i} of ${pageCount}`, 14, 290);
+    doc.text(`GGDC Tests — Generated ${format(new Date(), 'MMM d, yyyy h:mm a')} — Page ${i} of ${pageCount}`, 14, 290);
   }
 
   doc.save(`${test.settings.name.replace(/\s+/g, '_')}_bulk_report.pdf`);

@@ -1,4 +1,4 @@
-# SuperiorTests - Latest Fixes & Features
+# GGDC Tests - Latest Fixes & Features
 
 ## ✅ All Issues Fixed
 

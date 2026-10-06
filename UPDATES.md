@@ -1,4 +1,4 @@
-# SuperiorTests - Latest Updates
+# GGDC Tests - Latest Updates
 
 ## ✅ New Features Added
 

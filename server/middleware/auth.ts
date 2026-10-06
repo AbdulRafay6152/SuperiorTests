@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Authentication Middleware
+// GGDC Tests — Authentication Middleware
 // ============================================================
 
 import { Request, Response, NextFunction } from 'express';

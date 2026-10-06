@@ -28,7 +28,7 @@ export default function Layout() {
                 <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
               </div>
               <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
-                SuperiorTests
+                GGDC Tests
               </span>
             </Link>
             <nav className="hidden sm:flex items-center gap-4">
@@ -80,7 +80,7 @@ export default function Layout() {
       <footer className="border-t py-3 mt-auto" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            SuperiorTests
+            GGDC - Government Girls Degree College
           </span>
         </div>
       </footer>

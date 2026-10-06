@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Email Utility (Nodemailer)
+// GGDC Tests — Email Utility (Nodemailer)
 // ============================================================
 
 import nodemailer from 'nodemailer';

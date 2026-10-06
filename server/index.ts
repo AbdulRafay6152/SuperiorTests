@@ -1,5 +1,5 @@
 // ============================================================
-// SuperiorTests — Backend Server Entry Point
+// GGDC Tests — Backend Server Entry Point
 // ============================================================
 
 import express from 'express';
@@ -58,7 +58,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // ── Start Server ───────────────────────────────────────────
 app.listen(config.port, () => {
-  console.log(`SuperiorTests API running on port ${config.port}`);
+  console.log(`GGDC Tests API running on port ${config.port}`);
   console.log(`Environment: ${config.nodeEnv}`);
 });
 

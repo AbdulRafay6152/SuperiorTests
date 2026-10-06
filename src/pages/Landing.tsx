@@ -21,7 +21,7 @@ export default function Landing() {
               <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
             </div>
             <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
-              SuperiorTests
+              GGDC Tests
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -69,11 +69,11 @@ export default function Landing() {
               className="text-2xl font-bold mb-3 tracking-tight"
               style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', lineHeight: 1.3 }}
             >
-              Online testing for higher education.
+              Government Girls Degree College
             </h1>
             <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Create assessments, enforce academic integrity, and generate detailed reports. 
-              Built for colleges that need a reliable, no-frills testing platform.
+              Online testing platform for GGDC. Create assessments, enforce academic integrity, 
+              and generate detailed reports. Built for our college community.
             </p>
             {!user && (
               <div className="flex gap-2">
@@ -108,8 +108,8 @@ export default function Landing() {
 
       <footer className="border-t py-4" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>SuperiorTests</span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>For colleges and universities</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>GGDC Tests</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Government Girls Degree College</span>
         </div>
       </footer>
     </div>
