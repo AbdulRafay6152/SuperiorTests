@@ -346,21 +346,21 @@ export default function TestTake() {
     const questions = shuffledQuestions.length > 0 ? shuffledQuestions : test.questions;
     
     return (
-      <div className="min-h-screen px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
+      <div className="min-h-screen px-3 sm:px-4 py-6 sm:py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="max-w-3xl mx-auto">
           {/* Header with score */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-5 sm:mb-6">
             <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'var(--success)' + '20' }}>
               <span className="text-xl" style={{ color: 'var(--success)' }}>✓</span>
             </div>
             <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Submitted</h1>
-            <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
+            <p className="text-xs mb-4 px-2" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
             {test.settings.showResults && attempt.score !== null && (
-              <div className="p-3 rounded border inline-block" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="text-2xl font-bold mb-1" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
+              <div className="p-3 sm:p-4 rounded border inline-block min-w-[140px]" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
                   {attempt.percentage}%
                 </div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {attempt.score} / {attempt.maxScore} points
                 </div>
               </div>
@@ -369,58 +369,58 @@ export default function TestTake() {
 
           {/* Detailed results */}
           {test.settings.showResults && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Question Breakdown</h2>
+            <div className="space-y-2 sm:space-y-3">
+              <h2 className="text-sm font-semibold mb-2 sm:mb-3" style={{ color: 'var(--text)' }}>Question Breakdown</h2>
               {questions.map((q: Question, idx: number) => {
                 const studentAnswer = attempt.answers.find(a => a.questionId === q.id);
                 const isCorrect = checkAnswerCorrectness(q, studentAnswer?.answer);
                 
                 return (
-                  <div key={q.id} className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
-                          {isCorrect === true && (
-                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--success)' + '20', color: 'var(--success)' }}>
-                              ✓ Correct
-                            </span>
-                          )}
-                          {isCorrect === false && (
-                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--error)' + '20', color: 'var(--error)' }}>
-                              ✗ Incorrect
-                            </span>
-                          )}
-                          {isCorrect === null && (
-                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--text-muted)' + '20', color: 'var(--text-muted)' }}>
-                              Not answered
-                            </span>
-                          )}
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{q.points} pts</span>
-                        </div>
-                        <p className="text-xs mb-2" style={{ color: 'var(--text)' }}>{q.text}</p>
+                  <div key={q.id} className="p-2.5 sm:p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    {/* Question header */}
+                    <div className="mb-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
+                        <span className="text-xs font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
+                        {isCorrect === true && (
+                          <span className="text-xs px-1.5 py-0.5 rounded shrink-0" style={{ backgroundColor: 'var(--success)' + '20', color: 'var(--success)' }}>
+                            ✓ Correct
+                          </span>
+                        )}
+                        {isCorrect === false && (
+                          <span className="text-xs px-1.5 py-0.5 rounded shrink-0" style={{ backgroundColor: 'var(--error)' + '20', color: 'var(--error)' }}>
+                            ✗ Incorrect
+                          </span>
+                        )}
+                        {isCorrect === null && (
+                          <span className="text-xs px-1.5 py-0.5 rounded shrink-0" style={{ backgroundColor: 'var(--text-muted)' + '20', color: 'var(--text-muted)' }}>
+                            Not answered
+                          </span>
+                        )}
+                        <span className="text-xs ml-auto shrink-0" style={{ color: 'var(--text-muted)' }}>{q.points} pts</span>
                       </div>
+                      <p className="text-xs sm:text-sm leading-relaxed break-words" style={{ color: 'var(--text)' }}>{q.text}</p>
                     </div>
                     
-                    <div className="space-y-1.5 text-xs">
-                      <div>
+                    {/* Answer details */}
+                    <div className="space-y-1.5 text-xs sm:text-sm mt-2 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                      <div className="break-words">
                         <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Your answer: </span>
-                        <span style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
+                        <span className="break-words" style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
                           {formatStudentAnswer(q, studentAnswer?.answer) || '(no answer)'}
                         </span>
                       </div>
                       {test.settings.showCorrectAnswers && (
-                        <div>
+                        <div className="break-words">
                           <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Correct answer: </span>
-                          <span style={{ color: 'var(--success)' }}>
+                          <span className="break-words" style={{ color: 'var(--success)' }}>
                             {getCorrectAnswerText(q)}
                           </span>
                         </div>
                       )}
                       {test.settings.showCorrectAnswers && q.explanation && (
-                        <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                        <div className="mt-2 p-2 rounded break-words" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                           <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Explanation: </span>
-                          <span style={{ color: 'var(--text-secondary)' }}>{q.explanation}</span>
+                          <span className="break-words" style={{ color: 'var(--text-secondary)' }}>{q.explanation}</span>
                         </div>
                       )}
                     </div>
@@ -506,7 +506,8 @@ export default function TestTake() {
         </div>
       )}
 
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-4 flex gap-4">
+      <div className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
+        {/* Desktop sidebar */}
         <div className="hidden lg:block w-40 shrink-0">
           <div className="sticky top-14">
             <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Questions</p>
@@ -531,7 +532,8 @@ export default function TestTake() {
           </div>
         </div>
 
-        <div className="flex-1 test-content">
+        {/* Main content area */}
+        <div className="flex-1 test-content min-w-0">
           {currentQ && (
             <QuestionRenderer
               question={currentQ}
@@ -544,52 +546,58 @@ export default function TestTake() {
             />
           )}
 
-          <div className="lg:hidden mt-3 flex flex-wrap gap-1">
-            {questions.map((_: Question, idx: number) => {
-              const isAnswered = answers[idx]?.answer !== '' && answers[idx]?.answer !== null;
-              const isCurrent = idx === currentPage;
-              return (
-                <button key={idx} onClick={() => setCurrentPage(idx)}
-                  className="w-6 h-6 rounded text-xs font-medium border cursor-pointer"
-                  style={{
-                    backgroundColor: isCurrent ? 'var(--primary)' : isAnswered ? 'var(--accent)' + '30' : 'var(--surface)',
-                    borderColor: isCurrent ? 'var(--primary)' : 'var(--border)',
-                    color: isCurrent ? '#fff' : 'var(--text)',
-                  }}>
-                  {idx + 1}
-                </button>
-              );
-            })}
+          {/* Mobile question navigation */}
+          <div className="lg:hidden mt-3 p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Questions</p>
+            <div className="flex flex-wrap gap-1.5">
+              {questions.map((_: Question, idx: number) => {
+                const isAnswered = answers[idx]?.answer !== '' && answers[idx]?.answer !== null;
+                const isCurrent = idx === currentPage;
+                const isFlagged = flagged.has(idx);
+                return (
+                  <button key={idx} onClick={() => setCurrentPage(idx)}
+                    className="w-8 h-8 rounded text-xs font-medium border cursor-pointer flex items-center justify-center"
+                    style={{
+                      backgroundColor: isCurrent ? 'var(--primary)' : isAnswered ? 'var(--accent)' + '30' : 'var(--surface)',
+                      borderColor: isCurrent ? 'var(--primary)' : isFlagged ? 'var(--warning)' : 'var(--border)',
+                      color: isCurrent ? '#fff' : 'var(--text)',
+                    }}>
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between mt-4 pt-3 border-t gap-2" style={{ borderColor: 'var(--border)' }}>
             <button onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} disabled={currentPage === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border cursor-pointer disabled:opacity-30"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded text-xs font-medium border cursor-pointer disabled:opacity-30 shrink-0"
               style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-              <ChevronLeft size={12} /> Previous
+              <ChevronLeft size={12} /> <span className="hidden sm:inline">Previous</span>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button onClick={() => {
                 const newFlagged = new Set(flagged);
                 if (newFlagged.has(currentPage)) newFlagged.delete(currentPage);
                 else newFlagged.add(currentPage);
                 setFlagged(newFlagged);
               }}
-                className="px-2.5 py-1.5 rounded text-xs border cursor-pointer flex items-center gap-1"
+                className="px-2 sm:px-2.5 py-1.5 rounded text-xs border cursor-pointer flex items-center gap-1 shrink-0"
                 style={{ borderColor: flagged.has(currentPage) ? 'var(--warning)' : 'var(--border)', backgroundColor: 'var(--surface)', color: flagged.has(currentPage) ? 'var(--warning)' : 'var(--text-muted)' }}>
-                <Flag size={12} /> {flagged.has(currentPage) ? 'Flagged' : 'Flag'}
+                <Flag size={12} /> <span className="hidden sm:inline">{flagged.has(currentPage) ? 'Flagged' : 'Flag'}</span>
               </button>
               {currentPage < questions.length - 1 ? (
                 <button onClick={() => setCurrentPage(currentPage + 1)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border-none cursor-pointer"
+                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded text-xs font-medium border-none cursor-pointer shrink-0"
                   style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-                  Next <ChevronRight size={12} />
+                  <span className="hidden sm:inline">Next</span> <ChevronRight size={12} />
                 </button>
               ) : (
                 <button onClick={handleSubmit}
-                  className="px-3 py-1.5 rounded text-xs font-semibold border-none cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold border-none cursor-pointer shrink-0"
                   style={{ backgroundColor: 'var(--success)', color: '#fff' }}>
-                  Submit Test
+                  Submit
                 </button>
               )}
             </div>
@@ -623,40 +631,40 @@ function QuestionRenderer({ question, answer, onChange }: {
   const options = question.options || [];
 
   return (
-    <div className="p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+    <div className="p-3 sm:p-4 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
           {question.points} pt{question.points !== 1 ? 's' : ''}
         </span>
       </div>
-      <div className="text-sm mb-3" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(question.text) }} />
+      <div className="text-sm sm:text-base mb-3 leading-relaxed break-words" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(question.text) }} />
 
       {(question.type === 'multiple-choice-single' || question.type === 'true-false') && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {options.map(opt => (
-            <label key={opt.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer"
+            <label key={opt.id} className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded border cursor-pointer transition-colors"
               style={{ borderColor: answer === opt.text ? 'var(--accent)' : 'var(--border)', backgroundColor: answer === opt.text ? 'var(--accent)' + '10' : 'transparent' }}>
-              <input type="radio" name={question.id} checked={answer === opt.text} onChange={() => onChange(opt.text)} className="cursor-pointer" />
-              <span className="text-xs" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
+              <input type="radio" name={question.id} checked={answer === opt.text} onChange={() => onChange(opt.text)} className="cursor-pointer mt-0.5 shrink-0" style={{ width: '16px', height: '16px' }} />
+              <span className="text-xs sm:text-sm leading-relaxed break-words" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
             </label>
           ))}
         </div>
       )}
 
       {question.type === 'multiple-choice-multi' && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {options.map(opt => {
             const selected = Array.isArray(answer) ? answer.includes(opt.text) : false;
             return (
-              <label key={opt.id} className="flex items-center gap-2 p-2 rounded border cursor-pointer"
+              <label key={opt.id} className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded border cursor-pointer transition-colors"
                 style={{ borderColor: selected ? 'var(--accent)' : 'var(--border)', backgroundColor: selected ? 'var(--accent)' + '10' : 'transparent' }}>
                 <input type="checkbox" checked={selected}
                   onChange={() => {
                     const arr = Array.isArray(answer) ? [...answer] : [];
                     if (selected) onChange(arr.filter((a: string) => a !== opt.text));
                     else onChange([...arr, opt.text]);
-                  }} className="cursor-pointer" />
-                <span className="text-xs" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
+                  }} className="cursor-pointer mt-0.5 shrink-0" style={{ width: '16px', height: '16px' }} />
+                <span className="text-xs sm:text-sm leading-relaxed break-words" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: renderMath(opt.text) }} />
               </label>
             );
           })}
@@ -665,7 +673,7 @@ function QuestionRenderer({ question, answer, onChange }: {
 
       {(question.type === 'fill-blank' || question.type === 'short-answer') && (
         <input type="text" value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-          className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+          className="w-full px-3 py-2.5 rounded border text-sm outline-none"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
           placeholder="Type your answer..." />
       )}
@@ -673,41 +681,43 @@ function QuestionRenderer({ question, answer, onChange }: {
       {question.type === 'numeric' && (
         <div>
           <input type="number" value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-            className="w-40 px-2.5 py-1.5 rounded border text-xs outline-none"
+            className="w-full sm:w-48 px-3 py-2.5 rounded border text-sm outline-none"
             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
             placeholder="Enter a number" step="any" />
           {question.numericTolerance !== undefined && question.numericTolerance > 0 && (
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>±{question.numericTolerance} tolerance</p>
+            <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>±{question.numericTolerance} tolerance accepted</p>
           )}
         </div>
       )}
 
       {question.type === 'essay' && (
         <textarea value={(answer as string) || ''} onChange={e => onChange(e.target.value)}
-          className="w-full px-2.5 py-1.5 rounded border text-xs outline-none resize-y"
+          className="w-full px-3 py-2.5 rounded border text-sm outline-none resize-y"
           style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}
-          rows={6} placeholder="Write your response..." />
+          rows={8} placeholder="Write your response..." />
       )}
 
       {question.type === 'matching' && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {(question.matchingPairs || []).map(pair => (
-            <div key={pair.id} className="flex items-center gap-2">
-              <span className="text-xs font-medium w-24 shrink-0" style={{ color: 'var(--text)' }}>{pair.left}</span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→</span>
-              <select
-                value={(answer as Record<string, string>)?.[pair.id] || ''}
-                onChange={e => {
-                  const obj = { ...(answer as Record<string, string> || {}), [pair.id]: e.target.value };
-                  onChange(obj);
-                }}
-                className="flex-1 px-2 py-1 rounded border text-xs outline-none cursor-pointer"
-                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}>
-                <option value="">Select...</option>
-                {(question.matchingPairs || []).map(p => (
-                  <option key={p.id} value={p.right}>{p.right}</option>
-                ))}
-              </select>
+            <div key={pair.id} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{pair.left}</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-1">
+                <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>→</span>
+                <select
+                  value={(answer as Record<string, string>)?.[pair.id] || ''}
+                  onChange={e => {
+                    const obj = { ...(answer as Record<string, string> || {}), [pair.id]: e.target.value };
+                    onChange(obj);
+                  }}
+                  className="flex-1 px-2.5 py-2 rounded border text-xs sm:text-sm outline-none cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+                  <option value="">Select...</option>
+                  {(question.matchingPairs || []).map(p => (
+                    <option key={p.id} value={p.right}>{p.right}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           ))}
         </div>
