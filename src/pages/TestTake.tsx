@@ -166,8 +166,8 @@ export default function TestTake() {
 
   // Gate Step 1: Access verification
   if (phase === 'gate-access') {
-    const needsEmail = test.settings.accessMode === 'whitelist-email' || test.settings.accessMode === 'open';
-    const needsStudentId = test.settings.accessMode === 'whitelist-id' || test.settings.accessMode === 'open';
+    const needsEmail = test.settings.accessMode === 'whitelist-email';
+    const needsStudentId = test.settings.accessMode === 'whitelist-id';
     const needsPasscode = test.settings.accessMode === 'passcode';
     const needsAnyAccessField = needsEmail || needsStudentId || needsPasscode;
 
@@ -343,18 +343,90 @@ export default function TestTake() {
 
   // Submitted view
   if (phase === 'submitted' && attempt) {
+    const questions = shuffledQuestions.length > 0 ? shuffledQuestions : test.questions;
+    
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="text-center max-w-sm">
-          <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'var(--success)' + '20' }}>
-            <span className="text-xl" style={{ color: 'var(--success)' }}>✓</span>
+      <div className="min-h-screen px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
+        <div className="max-w-3xl mx-auto">
+          {/* Header with score */}
+          <div className="text-center mb-6">
+            <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: 'var(--success)' + '20' }}>
+              <span className="text-xl" style={{ color: 'var(--success)' }}>✓</span>
+            </div>
+            <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Submitted</h1>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
+            {test.settings.showResults && attempt.score !== null && (
+              <div className="p-3 rounded border inline-block" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div className="text-2xl font-bold mb-1" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
+                  {attempt.percentage}%
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {attempt.score} / {attempt.maxScore} points
+                </div>
+              </div>
+            )}
           </div>
-          <h1 className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Test Submitted</h1>
-          <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>{test.settings.completionMessage}</p>
-          {test.settings.showResults && attempt.score !== null && (
-            <div className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text)' }}>{attempt.percentage}%</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{attempt.score} / {attempt.maxScore} points</div>
+
+          {/* Detailed results */}
+          {test.settings.showResults && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Question Breakdown</h2>
+              {questions.map((q: Question, idx: number) => {
+                const studentAnswer = attempt.answers.find(a => a.questionId === q.id);
+                const isCorrect = checkAnswerCorrectness(q, studentAnswer?.answer);
+                
+                return (
+                  <div key={q.id} className="p-3 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Q{idx + 1}</span>
+                          {isCorrect === true && (
+                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--success)' + '20', color: 'var(--success)' }}>
+                              ✓ Correct
+                            </span>
+                          )}
+                          {isCorrect === false && (
+                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--error)' + '20', color: 'var(--error)' }}>
+                              ✗ Incorrect
+                            </span>
+                          )}
+                          {isCorrect === null && (
+                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--text-muted)' + '20', color: 'var(--text-muted)' }}>
+                              Not answered
+                            </span>
+                          )}
+                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{q.points} pts</span>
+                        </div>
+                        <p className="text-xs mb-2" style={{ color: 'var(--text)' }}>{q.text}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5 text-xs">
+                      <div>
+                        <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Your answer: </span>
+                        <span style={{ color: isCorrect === false ? 'var(--error)' : 'var(--text)' }}>
+                          {formatStudentAnswer(q, studentAnswer?.answer) || '(no answer)'}
+                        </span>
+                      </div>
+                      {test.settings.showCorrectAnswers && (
+                        <div>
+                          <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Correct answer: </span>
+                          <span style={{ color: 'var(--success)' }}>
+                            {getCorrectAnswerText(q)}
+                          </span>
+                        </div>
+                      )}
+                      {test.settings.showCorrectAnswers && q.explanation && (
+                        <div className="mt-2 p-2 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                          <span className="font-medium" style={{ color: 'var(--text-muted)' }}>Explanation: </span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{q.explanation}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -642,4 +714,102 @@ function QuestionRenderer({ question, answer, onChange }: {
       )}
     </div>
   );
+}
+
+// Helper function to check if an answer is correct
+function checkAnswerCorrectness(question: Question, answer: any): boolean | null {
+  if (!answer || answer === '') return null;
+  
+  switch (question.type) {
+    case 'multiple-choice-single':
+    case 'true-false':
+      return question.options?.some(o => o.isCorrect && o.text === answer) || false;
+    
+    case 'multiple-choice-multi': {
+      const correctOptions = question.options?.filter(o => o.isCorrect).map(o => o.text) || [];
+      const selectedAnswers = Array.isArray(answer) ? answer : [];
+      return correctOptions.length === selectedAnswers.length &&
+        correctOptions.every(opt => selectedAnswers.includes(opt));
+    }
+    
+    case 'fill-blank':
+    case 'short-answer':
+      return (answer as string).toLowerCase().trim() === (question.correctAnswer || '').toLowerCase().trim();
+    
+    case 'numeric': {
+      const numAnswer = parseFloat(answer as string);
+      const numCorrect = parseFloat(question.correctAnswer || '0');
+      const tolerance = question.numericTolerance || 0;
+      return Math.abs(numAnswer - numCorrect) <= tolerance;
+    }
+    
+    case 'matching': {
+      const pairs = question.matchingPairs || [];
+      const matchAnswers = answer as Record<string, string>;
+      return pairs.every(pair => matchAnswers[pair.id] === pair.right);
+    }
+    
+    case 'essay':
+      return null; // Essays require manual grading
+    
+    default:
+      return null;
+  }
+}
+
+// Helper function to format student's answer for display
+function formatStudentAnswer(question: Question, answer: any): string {
+  if (!answer || answer === '') return '';
+  
+  switch (question.type) {
+    case 'multiple-choice-single':
+    case 'true-false':
+    case 'fill-blank':
+    case 'short-answer':
+    case 'numeric':
+      return String(answer);
+    
+    case 'multiple-choice-multi':
+      return Array.isArray(answer) ? answer.join(', ') : '';
+    
+    case 'matching': {
+      const matchAnswers = answer as Record<string, string>;
+      const pairs = question.matchingPairs || [];
+      return pairs.map(pair => `${pair.left} → ${matchAnswers[pair.id] || '(not matched)'}`).join('; ');
+    }
+    
+    case 'essay':
+      return String(answer);
+    
+    default:
+      return String(answer);
+  }
+}
+
+// Helper function to get the correct answer text
+function getCorrectAnswerText(question: Question): string {
+  switch (question.type) {
+    case 'multiple-choice-single':
+    case 'true-false':
+      return question.options?.find(o => o.isCorrect)?.text || '';
+    
+    case 'multiple-choice-multi':
+      return question.options?.filter(o => o.isCorrect).map(o => o.text).join(', ') || '';
+    
+    case 'fill-blank':
+    case 'short-answer':
+    case 'numeric':
+      return question.correctAnswer || '';
+    
+    case 'matching': {
+      const pairs = question.matchingPairs || [];
+      return pairs.map(pair => `${pair.left} → ${pair.right}`).join('; ');
+    }
+    
+    case 'essay':
+      return '(Requires manual grading)';
+    
+    default:
+      return '';
+  }
 }
