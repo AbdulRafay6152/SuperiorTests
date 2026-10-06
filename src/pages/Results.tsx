@@ -111,31 +111,31 @@ export default function Results() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex flex-wrap items-center gap-1.5">
           <Link to="/dashboard" className="text-xs no-underline" style={{ color: 'var(--text-muted)' }}>← Tests</Link>
-          <span className="text-xs mx-1.5" style={{ color: 'var(--border-strong)' }}>/</span>
-          <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
+          <span className="text-xs" style={{ color: 'var(--border-strong)' }}>/</span>
+          <span className="text-sm font-semibold break-all" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
             {test.settings.name}
           </span>
-          <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>Results</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Results</span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           <button onClick={() => exportCSV(test, attempts)}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border cursor-pointer"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-            <Download size={10} /> CSV
+            <Download size={12} /> CSV
           </button>
           <button onClick={() => generateBulkPDFReport(test, attempts)}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border cursor-pointer"
             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text)' }}>
-            <Download size={10} /> PDF
+            <Download size={12} /> PDF
           </button>
         </div>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-5 gap-2 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
           <StatBox label="Submissions" value={stats.totalAttempts.toString()} />
           <StatBox label="Average" value={`${stats.averageScore}%`} />
           <StatBox label="Highest" value={`${stats.highestScore}%`} />
@@ -220,47 +220,47 @@ export default function Results() {
           </p>
         </div>
       ) : (
-        <div className="border rounded overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-          <table className="w-full">
+        <div className="border rounded overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <th className="text-left px-3 py-2 text-xs font-semibold cursor-pointer" style={{ color: 'var(--text-muted)' }}
+                <th className="text-left px-3 py-2.5 text-xs font-semibold cursor-pointer whitespace-nowrap" style={{ color: 'var(--text-muted)' }}
                   onClick={() => toggleSort('name')}>
                   Taker {sortField === 'name' && (sortDir === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="text-left px-3 py-2 text-xs font-semibold cursor-pointer hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}
+                <th className="text-left px-3 py-2.5 text-xs font-semibold cursor-pointer whitespace-nowrap" style={{ color: 'var(--text-muted)' }}
                   onClick={() => toggleSort('score')}>
                   Score {sortField === 'score' && (sortDir === 'asc' ? '↑' : '↓')}
                 </th>
-                <th className="text-left px-3 py-2 text-xs font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Time</th>
-                <th className="text-left px-3 py-2 text-xs font-semibold hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Flags</th>
-                <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}></th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold whitespace-nowrap hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Time</th>
+                <th className="text-left px-3 py-2.5 text-xs font-semibold whitespace-nowrap hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Flags</th>
+                <th className="text-right px-3 py-2.5 text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((attempt: Attempt) => (
                 <tr key={attempt.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-3 py-2">
-                    <div className="text-xs font-medium" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
+                  <td className="px-3 py-3">
+                    <div className="text-xs sm:text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
                     {attempt.takerFatherName && (
-                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>S/O {attempt.takerFatherName}</div>
+                      <div className="text-xs break-words" style={{ color: 'var(--text-muted)' }}>S/O {attempt.takerFatherName}</div>
                     )}
-                    <div className="text-xs text-mono" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-xs text-mono break-all" style={{ color: 'var(--text-muted)' }}>
                       {attempt.takerEmail}{attempt.takerStudentId && ` · ${attempt.takerStudentId}`}
                     </div>
                   </td>
-                  <td className="px-3 py-2 hidden sm:table-cell">
-                    <span className="text-xs font-semibold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-semibold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
                       {attempt.percentage}%
                     </span>
                     <span className="text-xs ml-1" style={{ color: 'var(--text-muted)' }}>
                       ({attempt.score}/{attempt.maxScore})
                     </span>
                   </td>
-                  <td className="px-3 py-2 hidden md:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="px-3 py-3 hidden md:table-cell text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                     {attempt.timeTakenSeconds ? formatDuration(attempt.timeTakenSeconds) : '—'}
                   </td>
-                  <td className="px-3 py-2 hidden lg:table-cell">
+                  <td className="px-3 py-3 hidden lg:table-cell">
                     {attempt.antiCheatEvents.length > 0 ? (
                       <span className="badge" style={{ backgroundColor: 'var(--warning)' + '15', color: 'var(--warning)' }}>
                         {attempt.antiCheatEvents.length}
@@ -269,10 +269,10 @@ export default function Results() {
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-3 text-right whitespace-nowrap">
                     <Link to={`/test/${test.id}/results/${attempt.id}`}
-                      className="text-xs no-underline font-medium"
-                      style={{ color: 'var(--accent)' }}>
+                      className="inline-block px-3 py-1.5 text-xs no-underline font-medium rounded border"
+                      style={{ color: 'var(--accent)', borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
                       View
                     </Link>
                   </td>
@@ -288,9 +288,9 @@ export default function Results() {
 
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-2.5 rounded border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{value}</div>
-      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</div>
+    <div className="p-3 sm:p-4 rounded border flex flex-col items-center justify-center text-center min-h-[70px] sm:min-h-[80px]" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="text-lg sm:text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>{value}</div>
+      <div className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>{label}</div>
     </div>
   );
 }
