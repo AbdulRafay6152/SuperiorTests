@@ -44,7 +44,7 @@ export default function ResetPassword() {
               <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
             </div>
             <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
-              GGDC
+              Superior Tests
             </span>
           </Link>
           <button

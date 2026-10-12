@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { getTestBySlug, createAttempt, updateAttempt, submitAttempt, checkAttemptLimit } from '../firestoreStore';
+import { getTestBySlug, createAttempt, updateAttempt, submitAttempt, checkAttemptLimit, getFirstAttemptNames } from '../firestoreStore';
 import { Test, Question, Attempt, Answer, AntiCheatEvent } from '../types';
 import { Clock, Flag, ChevronLeft, ChevronRight, AlertTriangle, Lock } from 'lucide-react';
 import katex from 'katex';
@@ -43,6 +43,9 @@ export default function TestTake() {
   const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
   const [userIP, setUserIP] = useState<string>('');
   const [ipBlocked, setIpBlocked] = useState<string | null>(null);
+  const [namesLocked, setNamesLocked] = useState(false);
+  const [lockedName, setLockedName] = useState('');
+  const [lockedFatherName, setLockedFatherName] = useState('');
 
   useEffect(() => {
     async function loadTest() {
@@ -310,6 +313,23 @@ export default function TestTake() {
 
   // Gate Step 2: Identity collection
   if (phase === 'gate-identity') {
+    // Check for previous attempts and lock names if needed
+    useEffect(() => {
+      async function checkPreviousAttempts() {
+        if (userIP && test) {
+          const previousNames = await getFirstAttemptNames(test.id, userIP);
+          if (previousNames) {
+            setNamesLocked(true);
+            setLockedName(previousNames.takerName);
+            setLockedFatherName(previousNames.takerFatherName);
+            setTakerName(previousNames.takerName);
+            setTakerFatherName(previousNames.takerFatherName);
+          }
+        }
+      }
+      checkPreviousAttempts();
+    }, [userIP, test]);
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-full max-w-sm">
@@ -323,60 +343,89 @@ export default function TestTake() {
             </button>
           </div>
 
-          <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Enter your details to begin the test.
-          </p>
+          {namesLocked ? (
+            <>
+              <div className="mb-4 p-3 rounded text-xs" style={{ backgroundColor: 'var(--accent)' + '10', color: 'var(--accent)' }}>
+                <p className="font-semibold mb-1">Returning Student</p>
+                <p>Your identity has been verified from previous attempt. Names are locked for security.</p>
+              </div>
+              
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name</label>
+                  <input type="text" value={lockedName} readOnly
+                    className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                    style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Father's name</label>
+                  <input type="text" value={lockedFatherName} readOnly
+                    className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                    style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Enter your details to begin the test.
+              </p>
 
-          {gateError && (
-            <div className="mb-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
-              {gateError}
-            </div>
+              {gateError && (
+                <div className="mb-3 px-2.5 py-2 rounded text-xs border" style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+                  {gateError}
+                </div>
+              )}
+
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name <span style={{ color: 'var(--error)' }}>*</span></label>
+                  <input type="text" value={takerName} onChange={e => setTakerName(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    placeholder="Your full name" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Father's name <span style={{ color: 'var(--error)' }}>*</span></label>
+                  <input type="text" value={takerFatherName} onChange={e => setTakerFatherName(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
+                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    placeholder="Your father's full name" />
+                </div>
+              </div>
+            </>
           )}
-
-          <div className="space-y-2.5">
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Full name <span style={{ color: 'var(--error)' }}>*</span></label>
-              <input type="text" value={takerName} onChange={e => setTakerName(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
-                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                placeholder="Your full name" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>Father's name <span style={{ color: 'var(--error)' }}>*</span></label>
-              <input type="text" value={takerFatherName} onChange={e => setTakerFatherName(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded border text-xs outline-none"
-                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                placeholder="Your father's full name" />
-            </div>
-          </div>
 
           <button
             onClick={async () => {
               setGateError('');
               
-              // Validate name
-              if (!takerName.trim()) { 
-                setGateError('Full name is required.'); 
-                return; 
-              }
-              
-              // Name validation: minimum 3 characters, only letters and spaces
-              const nameRegex = /^[a-zA-Z\s]{3,50}$/;
-              if (!nameRegex.test(takerName.trim())) {
-                setGateError('Please enter a valid name (3-50 characters, letters only).');
-                return;
-              }
-              
-              // Validate father's name
-              if (!takerFatherName.trim()) { 
-                setGateError("Father's name is required."); 
-                return; 
-              }
-              
-              // Father's name validation: minimum 3 characters, only letters and spaces
-              if (!nameRegex.test(takerFatherName.trim())) {
-                setGateError("Please enter a valid father's name (3-50 characters, letters only).");
-                return;
+              // Skip validation if names are locked (returning student)
+              if (!namesLocked) {
+                // Validate name
+                if (!takerName.trim()) { 
+                  setGateError('Full name is required.'); 
+                  return; 
+                }
+                
+                // Name validation: minimum 3 characters, only letters and spaces
+                const nameRegex = /^[a-zA-Z\s]{3,50}$/;
+                if (!nameRegex.test(takerName.trim())) {
+                  setGateError('Please enter a valid name (3-50 characters, letters only).');
+                  return;
+                }
+                
+                // Validate father's name
+                if (!takerFatherName.trim()) { 
+                  setGateError("Father's name is required."); 
+                  return; 
+                }
+                
+                // Father's name validation: minimum 3 characters, only letters and spaces
+                if (!nameRegex.test(takerFatherName.trim())) {
+                  setGateError("Please enter a valid father's name (3-50 characters, letters only).");
+                  return;
+                }
               }
 
               // Detect IP address

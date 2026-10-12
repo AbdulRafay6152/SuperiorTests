@@ -48,25 +48,44 @@ export default function Results() {
     return getTestStats(test.id, attempts);
   }, [test, attempts]);
 
+  // Group attempts by student (using email or name as key)
+  const groupedAttempts = useMemo(() => {
+    const groups: Record<string, Attempt[]> = {};
+    attempts.forEach(attempt => {
+      const key = attempt.takerEmail || attempt.takerName;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(attempt);
+    });
+    return groups;
+  }, [attempts]);
+
   const filtered = useMemo(() => {
-    let result = [...attempts];
+    let result = Object.entries(groupedAttempts).map(([key, attempts]) => {
+      // Sort attempts by attempt number and get the latest one for display
+      const sorted = attempts.sort((a, b) => b.attemptNumber - a.attemptNumber);
+      return { key, attempts: sorted, latest: sorted[0] };
+    });
+
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter((a: Attempt) =>
-        a.takerName.toLowerCase().includes(s) ||
-        a.takerEmail.toLowerCase().includes(s) ||
-        a.takerStudentId.toLowerCase().includes(s)
+      result = result.filter(group =>
+        group.latest.takerName.toLowerCase().includes(s) ||
+        group.latest.takerEmail.toLowerCase().includes(s) ||
+        group.latest.takerStudentId.toLowerCase().includes(s)
       );
     }
-    result.sort((a: Attempt, b: Attempt) => {
+
+    result.sort((a, b) => {
       let cmp = 0;
-      if (sortField === 'name') cmp = a.takerName.localeCompare(b.takerName);
-      else if (sortField === 'score') cmp = (a.percentage || 0) - (b.percentage || 0);
-      else cmp = new Date(a.submittedAt || 0).getTime() - new Date(b.submittedAt || 0).getTime();
+      if (sortField === 'name') cmp = a.latest.takerName.localeCompare(b.latest.takerName);
+      else if (sortField === 'score') cmp = (a.latest.percentage || 0) - (b.latest.percentage || 0);
+      else cmp = new Date(a.latest.submittedAt || 0).getTime() - new Date(b.latest.submittedAt || 0).getTime();
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return result;
-  }, [attempts, search, sortField, sortDir]);
+  }, [groupedAttempts, search, sortField, sortDir]);
 
   const questionStats = useMemo(() => {
     if (!test) return [];
@@ -238,51 +257,65 @@ export default function Results() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((attempt: Attempt) => (
-                <tr key={attempt.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-3 py-3">
-                    <div className="text-xs sm:text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
-                    {attempt.takerFatherName && (
-                      <div className="text-xs break-words" style={{ color: 'var(--text-muted)' }}>S/O {attempt.takerFatherName}</div>
-                    )}
-                    <div className="text-xs text-mono break-all" style={{ color: 'var(--text-muted)' }}>
-                      {attempt.takerEmail}{attempt.takerStudentId && ` · ${attempt.takerStudentId}`}
-                    </div>
-                    {attempt.takerIP && (
-                      <div className="text-xs text-mono" style={{ color: 'var(--text-muted)' }}>
-                        IP: {attempt.takerIP} · #{attempt.attemptNumber}
+              {filtered.map((group) => {
+                const attempt = group.latest;
+                const totalAttempts = group.attempts.length;
+                
+                return (
+                  <tr key={group.key} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                    <td className="px-3 py-3">
+                      <div className="text-xs sm:text-sm font-medium break-words" style={{ color: 'var(--text)' }}>{attempt.takerName}</div>
+                      {attempt.takerFatherName && (
+                        <div className="text-xs break-words" style={{ color: 'var(--text-muted)' }}>S/O {attempt.takerFatherName}</div>
+                      )}
+                      <div className="text-xs text-mono break-all" style={{ color: 'var(--text-muted)' }}>
+                        {attempt.takerEmail}{attempt.takerStudentId && ` · ${attempt.takerStudentId}`}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <span className="text-xs sm:text-sm font-semibold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
-                      {attempt.percentage}%
-                    </span>
-                    <span className="text-xs ml-1" style={{ color: 'var(--text-muted)' }}>
-                      ({attempt.score}/{attempt.maxScore})
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 hidden md:table-cell text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
-                    {attempt.timeTakenSeconds ? formatDuration(attempt.timeTakenSeconds) : '—'}
-                  </td>
-                  <td className="px-3 py-3 hidden lg:table-cell">
-                    {attempt.antiCheatEvents.length > 0 ? (
-                      <span className="badge" style={{ backgroundColor: 'var(--warning)' + '15', color: 'var(--warning)' }}>
-                        {attempt.antiCheatEvents.length}
+                      {attempt.takerIP && (
+                        <div className="text-xs text-mono" style={{ color: 'var(--text-muted)' }}>
+                          IP: {attempt.takerIP}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className="text-xs sm:text-sm font-semibold" style={{ color: (attempt.percentage || 0) >= 50 ? 'var(--success)' : 'var(--error)' }}>
+                        {attempt.percentage}%
                       </span>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-right whitespace-nowrap">
-                    <Link to={`/test/${test.id}/results/${attempt.id}`}
-                      className="inline-block px-3 py-1.5 text-xs no-underline font-medium rounded border"
-                      style={{ color: 'var(--accent)', borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                      <span className="text-xs ml-1" style={{ color: 'var(--text-muted)' }}>
+                        ({attempt.score}/{attempt.maxScore})
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 hidden md:table-cell text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                      {attempt.timeTakenSeconds ? formatDuration(attempt.timeTakenSeconds) : '—'}
+                    </td>
+                    <td className="px-3 py-3 hidden lg:table-cell">
+                      {attempt.antiCheatEvents.length > 0 ? (
+                        <span className="badge" style={{ backgroundColor: 'var(--warning)' + '15', color: 'var(--warning)' }}>
+                          {attempt.antiCheatEvents.length}
+                        </span>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        {totalAttempts > 1 && (
+                          <Link to={`/test/${test!.id}/results/${attempt.id}?attempts=${totalAttempts}`}
+                            className="inline-block px-2 py-1 text-xs no-underline font-medium rounded"
+                            style={{ color: 'var(--primary)', backgroundColor: 'var(--primary)' + '15' }}>
+                            {totalAttempts} attempts
+                          </Link>
+                        )}
+                        <Link to={`/test/${test!.id}/results/${attempt.id}`}
+                          className="inline-block px-3 py-1.5 text-xs no-underline font-medium rounded border"
+                          style={{ color: 'var(--accent)', borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
+                          View
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

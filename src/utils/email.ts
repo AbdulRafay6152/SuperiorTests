@@ -24,7 +24,7 @@ export const sendWelcomeEmail = async (userEmail: string, userName: string) => {
     const templateParams = {
       to_email: userEmail,
       to_name: userName,
-      message: `Welcome to GGDC Tests, ${userName}! Your account has been created successfully for Government Girls Degree College, Shahdadour. You can now create and manage online tests.`,
+      message: `Welcome to Superior Tests, ${userName}! Your account has been created successfully. You can now create and manage online tests.`,
     };
 
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);

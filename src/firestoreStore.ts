@@ -571,6 +571,29 @@ export async function getAttemptsByIP(testId: string, ip: string): Promise<Attem
 }
 
 /**
+ * Get the first attempt's name and father's name for a given IP and test
+ * Used to enforce same names for subsequent attempts
+ */
+export async function getFirstAttemptNames(testId: string, ip: string): Promise<{ takerName: string; takerFatherName: string } | null> {
+  try {
+    const attempts = await getAttemptsByIP(testId, ip);
+    if (attempts.length === 0) return null;
+    
+    // Sort by attempt number to get the first one
+    const sorted = attempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
+    const firstAttempt = sorted[0];
+    
+    return {
+      takerName: firstAttempt.takerName,
+      takerFatherName: firstAttempt.takerFatherName
+    };
+  } catch (error) {
+    console.error('Error getting first attempt names:', error);
+    return null;
+  }
+}
+
+/**
  * Check if a user can take a test based on IP and attempt limits
  * Returns: { allowed: boolean, message?: string, currentAttempts: number }
  */

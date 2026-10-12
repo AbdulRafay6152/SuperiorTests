@@ -13,12 +13,12 @@ import { getFirestore } from 'firebase/firestore';
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDdX_1pzM1kzBCbX-bxJxBlP0U8v9zdH8A",
-  authDomain: "ggdc-3902b.firebaseapp.com",
-  projectId: "ggdc-3902b",
-  storageBucket: "ggdc-3902b.firebasestorage.app",
-  messagingSenderId: "403055599158",
-  appId: "1:403055599158:web:ae7ab80d6162b3489e8297"
+  apiKey: "AIzaSyCWhSGWn3ZDGDNn_I-NIzgM9f67exrC82w",
+  authDomain: "superiortests.firebaseapp.com",
+  projectId: "superiortests",
+  storageBucket: "superiortests.firebasestorage.app",
+  messagingSenderId: "54832003221",
+  appId: "1:54832003221:web:aa988c5d08cdf96be1c39c"
 };
 
 // Initialize Firebase

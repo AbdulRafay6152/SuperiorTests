@@ -21,7 +21,7 @@ export default function Landing() {
               <ClipboardList size={14} color="#fff" strokeWidth={2.5} />
             </div>
             <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)' }}>
-              GGDC
+              Superior Tests
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -57,17 +57,14 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6 py-16 w-full">
           <div className="max-w-xl">
             <h1 
-              className="text-2xl font-bold mb-2 tracking-tight"
+              className="text-2xl font-bold mb-3 tracking-tight"
               style={{ fontFamily: 'var(--font-heading)', color: 'var(--text)', lineHeight: 1.3 }}
             >
-              Government Girls Degree College
+              Superior Tests
             </h1>
-            <p className="text-xs mb-3 font-semibold" style={{ color: 'var(--accent)' }}>
-              Shahdadour (SHD)
-            </p>
             <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Professional online testing platform for GGDC. Create assessments, enforce academic integrity, 
-              and generate detailed reports. Built for our college community.
+              Professional online testing platform. Create assessments, enforce academic integrity, 
+              and generate detailed reports. Built for colleges and universities.
             </p>
             {!user && (
               <div className="flex gap-2">
@@ -95,8 +92,8 @@ export default function Landing() {
 
       <footer className="border-t py-4" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>GGDC</span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Government Girls Degree College, Shahdadour</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Superior Tests</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Professional Online Testing Platform</span>
         </div>
       </footer>
     </div>

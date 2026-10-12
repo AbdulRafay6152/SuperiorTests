@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getTest, getAttempt, updateAttempt } from '../firestoreStore';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { getTest, getAttempt, getTestAttempts, updateAttempt } from '../firestoreStore';
 import { Test, Attempt, Question } from '../types';
 import { ArrowLeft, Download, Check, X, Minus, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
@@ -8,9 +8,11 @@ import { generatePDFReport } from '../utils/pdf';
 
 export default function ResultDetail() {
   const { id, attemptId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [test, setTest] = useState<Test | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [allAttempts, setAllAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [essayGrades, setEssayGrades] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
@@ -21,6 +23,10 @@ export default function ResultDetail() {
       if (id) {
         const t = await getTest(id);
         setTest(t);
+        
+        // Load all attempts for this test
+        const allTestAttempts = await getTestAttempts(id);
+        setAllAttempts(allTestAttempts.filter(a => a.status === 'submitted'));
       }
       if (attemptId) {
         const a = await getAttempt(attemptId);
@@ -30,6 +36,12 @@ export default function ResultDetail() {
     }
     loadData();
   }, [id, attemptId]);
+  
+  // Get all attempts for the same student
+  const studentAttempts = attempt ? allAttempts.filter(a => 
+    a.takerEmail === attempt.takerEmail || 
+    (a.takerName === attempt.takerName && a.takerFatherName === attempt.takerFatherName)
+  ).sort((a, b) => b.attemptNumber - a.attemptNumber) : [];
 
   if (loading) {
     return <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading result…</div>;
@@ -96,6 +108,31 @@ export default function ResultDetail() {
             <Download size={14} /> Export PDF
           </button>
         </div>
+        
+        {/* Attempt Switcher */}
+        {studentAttempts.length > 1 && (
+          <div className="mt-4 p-3 rounded" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
+              View Different Attempts ({studentAttempts.length} total)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {studentAttempts.map(a => (
+                <Link
+                  key={a.id}
+                  to={`/test/${test!.id}/results/${a.id}`}
+                  className="px-3 py-1.5 text-xs font-medium no-underline rounded"
+                  style={{
+                    backgroundColor: a.id === attempt.id ? 'var(--primary)' : 'var(--surface)',
+                    color: a.id === attempt.id ? '#fff' : 'var(--text)',
+                    border: a.id === attempt.id ? 'none' : '1px solid var(--border)'
+                  }}
+                >
+                  Attempt #{a.attemptNumber} — {a.percentage}%
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
