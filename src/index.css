@@ -220,3 +220,30 @@ html.dark body { background-color: var(--bg); color: var(--text); }
 .card-body {
   padding: 16px;
 }
+
+/* Animated buttons with color inversion on hover */
+.btn-primary {
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+}

@@ -154,8 +154,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-6 py-2.5 rounded text-sm font-semibold border-none cursor-pointer disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+              className="w-full mt-6 py-2.5 rounded text-sm font-semibold cursor-pointer disabled:opacity-50 btn-primary"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>

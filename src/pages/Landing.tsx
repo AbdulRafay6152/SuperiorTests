@@ -35,8 +35,7 @@ export default function Landing() {
             {user ? (
               <Link
                 to="/dashboard"
-                className="px-3 py-1.5 text-xs font-medium no-underline rounded"
-                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                className="px-3 py-1.5 text-xs font-medium no-underline rounded btn-primary"
               >
                 Dashboard
               </Link>
@@ -51,8 +50,7 @@ export default function Landing() {
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-3 py-1.5 text-xs font-medium no-underline rounded"
-                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                  className="px-3 py-1.5 text-xs font-medium no-underline rounded btn-primary"
                 >
                   Sign up
                 </Link>
@@ -79,15 +77,13 @@ export default function Landing() {
               <div className="flex gap-2">
                 <Link
                   to="/signup"
-                  className="px-4 py-2 text-xs font-semibold no-underline rounded"
-                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                  className="px-4 py-2 text-xs font-semibold no-underline rounded btn-primary"
                 >
                   Create free account
                 </Link>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-xs font-medium no-underline rounded border"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                  className="px-4 py-2 text-xs font-medium no-underline rounded btn-secondary"
                 >
                   Log in
                 </Link>

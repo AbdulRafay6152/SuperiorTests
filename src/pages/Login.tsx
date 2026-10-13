@@ -102,8 +102,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-1.5 rounded text-xs font-semibold border-none cursor-pointer disabled:opacity-50"
-            style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+            className="w-full py-1.5 rounded text-xs font-semibold cursor-pointer disabled:opacity-50 btn-primary"
           >
             {loading ? 'Logging in…' : 'Log in'}
           </button>
