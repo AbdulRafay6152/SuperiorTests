@@ -431,6 +431,48 @@ export async function updateTest(test: Test): Promise<void> {
   }
 }
 
+export async function duplicateTest(testId: string): Promise<Test | null> {
+  try {
+    const originalTest = await getTest(testId);
+    if (!originalTest) return null;
+
+    const userId = currentUser?.id || auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error('No user logged in');
+    }
+
+    const newTestId = generateId();
+    const newSlug = generateSlug(originalTest.settings.name + ' (Copy)');
+    
+    const duplicatedTest: Omit<Test, 'id'> = {
+      ownerId: userId,
+      slug: newSlug,
+      settings: {
+        ...originalTest.settings,
+        name: originalTest.settings.name + ' (Copy)'
+      },
+      questions: originalTest.questions.map(q => ({
+        ...q,
+        id: generateId(),
+        testId: newTestId
+      })),
+      published: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await setDoc(doc(db, 'tests', newTestId), duplicatedTest);
+
+    return {
+      id: newTestId,
+      ...duplicatedTest
+    };
+  } catch (error) {
+    console.error('Error duplicating test:', error);
+    return null;
+  }
+}
+
 export async function deleteTest(id: string): Promise<void> {
   try {
     // Delete all attempts for this test

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { getUserTests, deleteTest, getTestStats, publishTest, unpublishTest } from '../firestoreStore';
+import { getUserTests, deleteTest, getTestStats, publishTest, unpublishTest, duplicateTest } from '../firestoreStore';
 import { Test } from '../types';
 import { Plus, Trash2, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -49,6 +49,19 @@ export default function Dashboard() {
     navigator.clipboard.writeText(url);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
+  };
+
+  const handleDuplicate = async (testId: string) => {
+    if (confirm('Duplicate this test? A copy will be created with all questions.')) {
+      const newTest = await duplicateTest(testId);
+      if (newTest) {
+        const userTests = await getUserTests(user.uid);
+        setTests(userTests);
+        navigate(`/test/${newTest.id}/edit`);
+      } else {
+        alert('Failed to duplicate test. Please try again.');
+      }
+    }
   };
 
   if (loading) {
@@ -151,6 +164,14 @@ export default function Dashboard() {
                           >
                             Edit
                           </Link>
+                          <button
+                            onClick={() => handleDuplicate(test.id)}
+                            className="px-1.5 py-0.5 text-xs border-none bg-transparent cursor-pointer rounded"
+                            style={{ color: 'var(--accent)' }}
+                            title="Duplicate test"
+                          >
+                            Duplicate
+                          </button>
                           {test.published && (
                             <Link
                               to={`/test/${test.id}/results`}

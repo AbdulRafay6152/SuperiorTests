@@ -5,6 +5,7 @@ import { getTheme, initializeAdminAccount } from './firestoreStore';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import AdminPanel from './pages/AdminPanel';
 import Dashboard from './pages/Dashboard';
 import TestEditor from './pages/TestEditor';
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/admin-setup" element={<AdminSetup />} />
         <Route path="/take/:slug" element={<TestTake />} />

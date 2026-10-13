@@ -311,25 +311,25 @@ export default function TestTake() {
     );
   }
 
-  // Gate Step 2: Identity collection
-  if (phase === 'gate-identity') {
-    // Check for previous attempts and lock names if needed
-    useEffect(() => {
-      async function checkPreviousAttempts() {
-        if (userIP && test) {
-          const previousNames = await getFirstAttemptNames(test.id, userIP);
-          if (previousNames) {
-            setNamesLocked(true);
-            setLockedName(previousNames.takerName);
-            setLockedFatherName(previousNames.takerFatherName);
-            setTakerName(previousNames.takerName);
-            setTakerFatherName(previousNames.takerFatherName);
-          }
+  // Check for previous attempts and lock names if needed (must be at top level)
+  useEffect(() => {
+    async function checkPreviousAttempts() {
+      if (userIP && test && phase === 'gate-identity') {
+        const previousNames = await getFirstAttemptNames(test.id, userIP);
+        if (previousNames) {
+          setNamesLocked(true);
+          setLockedName(previousNames.takerName);
+          setLockedFatherName(previousNames.takerFatherName);
+          setTakerName(previousNames.takerName);
+          setTakerFatherName(previousNames.takerFatherName);
         }
       }
-      checkPreviousAttempts();
-    }, [userIP, test]);
+    }
+    checkPreviousAttempts();
+  }, [userIP, test, phase]);
 
+  // Gate Step 2: Identity collection
+  if (phase === 'gate-identity') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-full max-w-sm">

@@ -115,10 +115,12 @@ export default function Login() {
           </Link>
         </p>
 
-        <p className="mt-4 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-          Don't have an account? Contact your administrator.
-        </p>
-      </div>
+          <p className="mt-4 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+            Don't have an account?{' '}
+            <Link to="/signup" style={{ color: 'var(--accent)' }}>
+              Sign up
+            </Link>
+          </p>      </div>
     </div>
   );
 }
