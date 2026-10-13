@@ -94,6 +94,23 @@ export default function TestTake() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [phase, test?.settings.antiCheat.preventRefresh]);
 
+  // Check for previous attempts and lock names if needed
+  useEffect(() => {
+    async function checkPreviousAttempts() {
+      if (userIP && test && phase === 'gate-identity') {
+        const previousNames = await getFirstAttemptNames(test.id, userIP);
+        if (previousNames) {
+          setNamesLocked(true);
+          setLockedName(previousNames.takerName);
+          setLockedFatherName(previousNames.takerFatherName);
+          setTakerName(previousNames.takerName);
+          setTakerFatherName(previousNames.takerFatherName);
+        }
+      }
+    }
+    checkPreviousAttempts();
+  }, [userIP, test, phase]);
+
   function logEvent(type: AntiCheatEvent['type'], details?: string) {
     if (!attempt) return;
     const event: AntiCheatEvent = { id: generateId(), attemptId: attempt.id, type, timestamp: new Date().toISOString(), details };
@@ -310,23 +327,6 @@ export default function TestTake() {
       </div>
     );
   }
-
-  // Check for previous attempts and lock names if needed (must be at top level)
-  useEffect(() => {
-    async function checkPreviousAttempts() {
-      if (userIP && test && phase === 'gate-identity') {
-        const previousNames = await getFirstAttemptNames(test.id, userIP);
-        if (previousNames) {
-          setNamesLocked(true);
-          setLockedName(previousNames.takerName);
-          setLockedFatherName(previousNames.takerFatherName);
-          setTakerName(previousNames.takerName);
-          setTakerFatherName(previousNames.takerFatherName);
-        }
-      }
-    }
-    checkPreviousAttempts();
-  }, [userIP, test, phase]);
 
   // Gate Step 2: Identity collection
   if (phase === 'gate-identity') {

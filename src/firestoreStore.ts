@@ -120,34 +120,31 @@ export async function initializeAdminAccount(): Promise<void> {
   const adminPassword = 'Admin123#@!4--_qwerty';
   
   try {
-    // Check if admin already exists
-    const adminQuery = query(collection(db, 'users'), where('email', '==', adminEmail));
-    const adminSnapshot = await getDocs(adminQuery);
+    // Try to create admin account directly
+    // If it already exists, Firebase will throw auth/email-already-in-use error
+    const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+    const firebaseUser = userCredential.user;
     
-    if (adminSnapshot.empty) {
-      // Create admin account
-      const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
-      const firebaseUser = userCredential.user;
-      
-      await firebaseUpdateProfile(firebaseUser, { displayName: 'Superior Admin' });
-      
-      const adminData: Omit<User, 'id'> = {
-        email: adminEmail,
-        name: 'Superior Admin',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      };
-      
-      await setDoc(doc(db, 'users', firebaseUser.uid), adminData);
-      
-      // Sign out immediately after creating admin
-      await signOut(auth);
-      
-      console.log('Admin account created successfully');
-    }
+    await firebaseUpdateProfile(firebaseUser, { displayName: 'Superior Admin' });
+    
+    const adminData: Omit<User, 'id'> = {
+      email: adminEmail,
+      name: 'Superior Admin',
+      role: 'admin',
+      createdAt: new Date().toISOString()
+    };
+    
+    await setDoc(doc(db, 'users', firebaseUser.uid), adminData);
+    
+    // Sign out immediately after creating admin
+    await signOut(auth);
+    
+    console.log('Admin account created successfully');
   } catch (error: any) {
-    // If admin already exists, that's fine
-    if (error.code !== 'auth/email-already-in-use') {
+    // If admin already exists, that's fine - just ignore the error
+    if (error.code === 'auth/email-already-in-use') {
+      console.log('Admin account already exists');
+    } else {
       console.error('Error initializing admin account:', error);
     }
   }
